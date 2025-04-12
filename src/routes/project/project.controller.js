@@ -20,24 +20,21 @@ const createNewProject = asyncHandler(async (req, res)=>{
     return res.status(201).json(new ApiResponse(201, {projectId: project._id}, "Project Created"))
 })
 
-const changeProjectName = asyncHandler(async (req, res)=>{
-    const {name} = req.body
+const updateProjectDetails = asyncHandler(async (req, res)=>{
+    const {name, description} = req.body
     const createdBy = req._id
-    const existingProject = await Project.findOne({createdBy, name})
-    if(existingProject){
-        throw new ApiError(409, "Can not create, Project already Exists with same name")
+    if(req.project.name !== name){
+        const existingProject = await Project.findOne({createdBy, name})
+        if(existingProject){
+            throw new ApiError(409, "Can not create, Project already Exists with same name")
+        }
     }
     req.project.name = name
-    await req.project.save()
-    return res.status(200).json(new ApiResponse(200, {}, "Name Changed"))
-})
-
-const changeDescription = asyncHandler(async (req, res)=>{
-    const {description, projectId} = req.body
     req.project.description = description
     await req.project.save()
-    return res.status(200).json(new ApiResponse(200, {}, "Description Changed"))
+    return res.status(200).json(new ApiResponse(200, {}, "Project Details updated"))
 })
+
 
 const addMemberToProject = asyncHandler(async (req,res)=>{
     const {email, projectId, role} = req.body
@@ -53,7 +50,7 @@ const addMemberToProject = asyncHandler(async (req,res)=>{
     return res.status(201).json(new ApiResponse(201, {}, "Member Added in Project"))
 })
 
-const changeMemberRole = asyncHandler(async (req, res)=>{
+const updateMemberRole = asyncHandler(async (req, res)=>{
     const {userId, projectId, role} = req.body
 
     const user = await User.findById(userId)
@@ -65,7 +62,7 @@ const changeMemberRole = asyncHandler(async (req, res)=>{
         throw new ApiError(404, `Member not exists in Project`)
     projectMember.role = role
     await projectMember.save()
-    return res.status(200).json(new ApiResponse(200, {}, "Member Role Changed"))
+    return res.status(200).json(new ApiResponse(200, {}, "Member Role updated"))
 })
 
 const removeMember = asyncHandler(async (req, res)=>{
@@ -124,10 +121,9 @@ const deleteProject = asyncHandler(async (req, res)=>{
 
 export {
     createNewProject,
-    changeProjectName,
-    changeDescription,
+    updateProjectDetails,
     addMemberToProject,
-    changeMemberRole,
+    updateMemberRole,
     removeMember,
     projectDetails,
     deleteProject,

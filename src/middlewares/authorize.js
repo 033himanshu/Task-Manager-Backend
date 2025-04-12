@@ -34,3 +34,13 @@ export const verifyProjectAdmin = asyncHandler(async (req, res, next)=>{
     else
         throw new ApiError(403, "Not Authorized to Perform Action")
 })
+
+export const verifyBoardExist = asyncHandler( async (req, res, next)=>{
+    const {boardId} = req.body
+    const board = await Board.findById(boardId)
+    if(!board){
+        req.board = board
+        throw new ApiError(400, "Board Not exists")
+    }
+    next()
+})

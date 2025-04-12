@@ -87,7 +87,7 @@ const updateProfile = asyncHandler (async (req, res)=>{
     return res.status(200).json( new ApiResponse(200, {}, "User Profile Updated"))
 })
 
-const changePassword = asyncHandler (async (req, res)=>{
+const updatePassword = asyncHandler (async (req, res)=>{
     let {currentPassword, newPassword} = req.body
     const user = await User.findById(req._id)
     if(!await user.isPasswordCorrect(currentPassword))
@@ -95,7 +95,7 @@ const changePassword = asyncHandler (async (req, res)=>{
        
     user.password = newPassword
     await user.save()
-    return res.status(200).json(new ApiResponse(200, {}, "Password Changed"))
+    return res.status(200).json(new ApiResponse(200, {}, "Password Updated"))
 })
 
 
@@ -124,7 +124,7 @@ const resetPassword = asyncHandler (async (req, res)=>{
     user.resetPasswordToken = undefined
     user.resetPasswordTokenExpiresTime = undefined
     await user.save()
-    return res.status(200).json(new ApiResponse(200, {}, "Password Changed"))
+    return res.status(200).json(new ApiResponse(200, {}, "Password Updated"))
 })
 
 const deleteAccount =  asyncHandler (async (req, res)=>{
@@ -178,7 +178,7 @@ export {
     resendEmailVerification,
     updateAvatar,
     updateProfile,
-    changePassword,
+    updatePassword,
     forgotPassword,
     resetPassword,
     deleteAccount,

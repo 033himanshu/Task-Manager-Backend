@@ -49,7 +49,7 @@ const userLoginValidator = () => {
   ];
 };
 
-const userChangeCurrentPasswordValidator = () => {
+const userUpdateCurrentPasswordValidator = () => {
   return [
     body("oldPassword").notEmpty().withMessage("Old password is required"),
     newPasswordValidator,
@@ -72,9 +72,10 @@ const createProjectValidator = () => {
     body("description").optional(),
   ];
 };
-const changeProjectNameValidator = ()=>{
+const addBoardValidator = () =>{
   return [
-    body("name").notEmpty().withMessage("Name is required"),
+    body('name').notEmpty().withMessage("Name is required"),
+    body('description').optional(),
   ]
 }
 
@@ -84,7 +85,7 @@ const addMemberToProjectValidator = () => {
     roleValidator,
   ];
 };
-const changeMemberRoleValidator = () => {
+const updateMemberRoleValidator = () => {
   return [
     roleValidator,
   ]
@@ -116,13 +117,13 @@ const notesValidator = () => {
 
 export {
   addMemberToProjectValidator,
-  changeMemberRoleValidator,
+  updateMemberRoleValidator,
   createProjectValidator,
-  changeProjectNameValidator,
+  addBoardValidator,
   createTaskValidator,
   notesValidator,
   updateTaskValidator,
-  userChangeCurrentPasswordValidator,
+  userUpdateCurrentPasswordValidator,
   userForgotPasswordValidator,
   userLoginValidator,
   userRegisterValidator,

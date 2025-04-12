@@ -2,33 +2,30 @@ import express from "express"
 const router = express.Router()
 
 import {
-    addNewBoard,
-    changeBoardPosition,
+    addBoard,
+    updateBoardPosition,
     deleteBoard,
-    changeBoardDescription,
-    changeBoardName,
+    updateBoardDetails,
     boardDetails,
 } from './board.controller.js'
 
-// import {
-//     createProjectValidator,
-//     changeProjectNameValidator,
-//     addMemberToProjectValidator,
-//     changeMemberRoleValidator,
-// } from '../../validators/index.js'
-// import  {validate} from '../../middlewares/validator.middleware.js'
+import {
+    addBoardValidator,
+} from '../../validators/index.js'
+import  {validate} from '../../middlewares/validator.middleware.js'
 
 
 
-import {verifyJWT, verifyProjectAdmin} from '../../middlewares/authorize.js'
+import {verifyJWT, verifyProjectAdmin, verifyBoardExist} from '../../middlewares/authorize.js'
 router.use(verifyJWT)
 router.use(verifyProjectAdmin)
 
-router.post('/add-new-board', addNewBoard)
-router.patch('/change-board-position', changeBoardPosition)
+router.post('/add-board', addBoardValidator(), validate, addBoard)
+
+router.use(verifyBoardExist)
+router.patch('/update-board-position', updateBoardPosition)
 router.delete('/delete-board', deleteBoard)
-router.patch('/change-board-name', changeBoardName)
-router.board('/change-board-description', changeBoardDescription)
+router.patch('/update-board-details', addBoardValidator(), validate, updateBoardDetails)
 router.get('/get-board', boardDetails)
 
 
