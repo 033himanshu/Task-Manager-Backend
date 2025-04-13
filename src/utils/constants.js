@@ -9,9 +9,7 @@ export const UserRolesEnum = {
 
 export const AvailableUserRoles = Object.values(UserRolesEnum);
 
-// /**
-//  * @type {{TODO: "todo", IN_PROGRESS: "in_progress", DONE: "done"} as const}
-//  */
+
 // export const TaskStatusEnum = {
 //   TODO: "todo",
 //   IN_PROGRESS: "in_progress",
@@ -19,3 +17,10 @@ export const AvailableUserRoles = Object.values(UserRolesEnum);
 // };
 
 // export const AvailableTaskStatuses = Object.values(TaskStatusEnum);
+
+
+export const CloudinaryFolderEnum = {
+    AVATAR: 'avatar',
+    ATTACHMENTS : 'attachments',
+    MAIN : 'task-manager',
+}

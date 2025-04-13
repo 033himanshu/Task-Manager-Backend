@@ -72,7 +72,7 @@ const createProjectValidator = () => {
     body("description").optional(),
   ];
 };
-const addBoardValidator = () =>{
+const boardValidator = () =>{
   return [
     body('name').notEmpty().withMessage("Name is required"),
     body('description').optional(),
@@ -90,26 +90,26 @@ const updateMemberRoleValidator = () => {
     roleValidator,
   ]
 }
-
+const assignedToValidator = body("assignedTo").notEmpty().withMessage("Assigned to is required")
 const createTaskValidator = () => {
   return [
     body("title").notEmpty().withMessage("Title is required"),
     body("description").optional(),
-    body("assignedTo").notEmpty().withMessage("Assigned to is required"),
-    body("status")
-      .notEmpty()
-      .withMessage("Status is required"),
+    assignedToValidator,
+    body("board").notEmpty().withMessage("Board is required"),
   ];
 };
-
-const updateTaskValidator = () => {
+const createSubTaskValidator = () => {
   return [
-    body("title").optional(),
-    body("description").optional(),
-    body("status").optional(),
-    body("assignedTo").optional(),
-  ];
-};
+    body('title').notEmpty().withMessage('Title is required')
+  ]
+}
+const updateTaskMemberValidator = () =>{
+  return [
+    assignedToValidator
+  ]
+}
+
 
 const notesValidator = () => {
   return [body("content").notEmpty().withMessage("Content is required")];
@@ -119,10 +119,11 @@ export {
   addMemberToProjectValidator,
   updateMemberRoleValidator,
   createProjectValidator,
-  addBoardValidator,
+  boardValidator,
   createTaskValidator,
+  createSubTaskValidator,
+  updateTaskMemberValidator,
   notesValidator,
-  updateTaskValidator,
   userUpdateCurrentPasswordValidator,
   userForgotPasswordValidator,
   userLoginValidator,

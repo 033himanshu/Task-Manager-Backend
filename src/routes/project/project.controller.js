@@ -106,12 +106,18 @@ const projectDetails =asyncHandler(async (req, res)=>{
         }
     ])
     // TODO : 
-    return res.status(200).json(new ApiResponse(200, {projectMembers}, "Project Details Fetched"))
+    return res.status(200).json(new ApiResponse(200, {...req.project, projectMembers}, "Project Details Fetched"))
 })
 
 const deleteProject = asyncHandler(async (req, res)=>{
     
     return res.status(501).json(501, {}, "Not Implemented yet, Sorry for incovinience")
+})
+
+const allProjects = asyncHandler(async (req, res)=>{
+    const createdBy  = req._id
+    const projects = await Project.find({createdBy})
+    return res.status(200).json(new ApiResponse(200, {...projects}, "All Projects"))
 })
 
 
@@ -127,4 +133,5 @@ export {
     removeMember,
     projectDetails,
     deleteProject,
+    allProjects,
 }

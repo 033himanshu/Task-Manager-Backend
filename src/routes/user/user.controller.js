@@ -5,7 +5,7 @@ import {ApiError} from "../../utils/api-error.js"
 import { destroyOnCloudinary, replaceOnCloudinary, uploadOnCloudinary } from "../../utils/cloudinary.js"
 import { ApiResponse } from "../../utils/api-response.js"
 
-
+import {CloudinaryFolderEnum} from '../../utils/constants.js'
 
 
 //controllers
@@ -143,12 +143,13 @@ const updateAvatar = asyncHandler (async(req, res)=>{
     const user = await User.findById(req._id)
     if(!user)
         throw new ApiError(400, "User not exists")
+    const folder = `/${CloudinaryFolderEnum.AVATAR}/${user._id}`
     if(!user.avatar){
-        const cloudinaryResponse = await uploadOnCloudinary(req.file.path)
+        const cloudinaryResponse = await uploadOnCloudinary(req.file.path, folder)
         user.avatar = cloudinaryResponse.secure_url
         await user.save()
     }else{
-        await replaceOnCloudinary(user.avatar, req.file.path)
+        await replaceOnCloudinary(user.avatar, req.file.path, folder)
     }
     // console.log(cloudinaryResponse)
     return res.status(200).json(new ApiResponse(200, {}, "Profile Picture Updated"))
@@ -156,10 +157,11 @@ const updateAvatar = asyncHandler (async(req, res)=>{
 
 const deleteAvatar = asyncHandler (async(req, res)=>{
     const user = await User.findById(req._id)
+    const folder = `${CloudinaryFolderEnum.AVATAR}/${user._id}`
     if(!user)
         throw new ApiError(400, "User not exists")
     if(user.avatar){
-        const cloudinaryResponse = await destroyOnCloudinary(user.avatar)
+        const cloudinaryResponse = await destroyOnCloudinary(user.avatar, folder)
         console.log(cloudinaryResponse)
         if(cloudinaryResponse.result === 'ok')
             user.profilePicture = undefined
@@ -169,7 +171,7 @@ const deleteAvatar = asyncHandler (async(req, res)=>{
     //     throw new ApiError(400, "Profile Image Doesn't exists")
     // }
     // console.log(cloudinaryResponse)
-    return success(res, 200, "Profile Picture Deleted")
+    return res.status(200).json(new ApiResponse(200, {}, "Profile Picture Deleted"))
 })
 
 

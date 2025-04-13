@@ -10,6 +10,10 @@ const addNote = asyncHandler(async (req, res)=>{
     const note = await Note.create({project: projectId, createdBy, content})
     return res.status(201).json(new ApiResponse(201, {...note}, "Board Updated"))
 })
+const getNotes = asyncHandler(async (req, res)=>{
+    const notes = await Note.find({project : req.body.projectId})
+    return res.status(200).json(new ApiResponse(200, {notes}, "All Available Notes"))
+})
 
 const updateNote = asyncHandler(async (req, res)=>{
     const {content, noteId} = req.body
@@ -31,4 +35,5 @@ export {
     addNote,
     updateNote,
     deleteNote,
+    getNotes,
 }

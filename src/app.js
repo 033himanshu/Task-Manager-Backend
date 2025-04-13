@@ -11,14 +11,12 @@ import authRouter from './routes/auth/auth.route.js'
 import userRouter from './routes/user/user.route.js'
 import projectRouter from './routes/project/project.route.js'
 import taskRouter from './routes/task/task.route.js'
-import subTaskRouter from './routes/subTask/subTask.route.js'
+import boardRouter from './routes/board/board.route.js'
 import noteRouter from './routes/note/note.route.js'
 
 const app = express()
 
-app.use(cors({
-    path : '.',
-}))
+
 
 app.use(express.json())
 app.use(express.urlencoded({extended: true}))
@@ -43,12 +41,12 @@ app.get(`${baseUrl}`, (req, res)=>{
     })
 })
 
-app.use(`${baseUrl}healthcheck`, healthCheckRouter)
 app.use(`${baseUrl}auth`, authRouter)
-app.use(`${baseUrl}user`, userRouter)
+app.use(`${baseUrl}board`, boardRouter)
+app.use(`${baseUrl}healthcheck`, healthCheckRouter)
+app.use(`${baseUrl}note`, noteRouter)
 app.use(`${baseUrl}project`, projectRouter)
 app.use(`${baseUrl}task`, taskRouter)
-app.use(`${baseUrl}subtask`, subTaskRouter)
-app.use(`${baseUrl}notes`, noteRouter)
+app.use(`${baseUrl}user`, userRouter)
 
 export default app

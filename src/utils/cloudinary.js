@@ -5,12 +5,15 @@ const cloud_name =process.env.CLOUDINARY_CLOUD_NAME
 const api_key = process.env.CLOUDINARY_API_KEY
 const api_secret = process.env.CLOUDINARY_API_SECRET
 cloudinary.config({ cloud_name, api_key, api_secret})
-const folder = 'authorizationSystem'
+
+import {CloudinaryFolderEnum} from './constants.js'
+const mainFolder = CloudinaryFolderEnum.MAIN
 
 
 
-const uploadOnCloudinary = async (localFilePath) =>{
+const uploadOnCloudinary = async (localFilePath, folder) =>{
     let response = null
+    folder = folder = `${mainFolder}/${folder}`
     try{
         if(!localFilePath) return null
         //upload the  file on cloudinary
@@ -28,11 +31,12 @@ const uploadOnCloudinary = async (localFilePath) =>{
     return response
 }
 
-const replaceOnCloudinary = async(cloudinaryFilePath, localFilePath) => {
+const replaceOnCloudinary = async(cloudinaryFilePath, localFilePath, folder) => {
     let response = null
+    folder = `${mainFolder}/${folder}/`
     try {
         if(!localFilePath) return null
-        let public_id = `${folder}/`+cloudinaryFilePath.split(`${folder}/`)[1].split('.')[0]
+        let public_id = `${folder}`+cloudinaryFilePath.split(`${folder}`)[1].split('.')[0]
         response = await cloudinary.uploader.upload(localFilePath, {
             public_id,
             overwrite: true,
@@ -47,11 +51,12 @@ const replaceOnCloudinary = async(cloudinaryFilePath, localFilePath) => {
     return response
 }
 
-const destroyOnCloudinary = async(cloudinaryFilePath) => {
+const destroyOnCloudinary = async(cloudinaryFilePath, folder) => {
     let response = null
+    folder = `${mainFolder}/${folder}/`
     try {
         if(!cloudinaryFilePath) return null
-        let public_id = `${folder}/`+cloudinaryFilePath.split(`${folder}/`)[1].split('.')[0]
+        let public_id = `${folder}`+cloudinaryFilePath.split(`${folder}`)[1].split('.')[0]
         response = await cloudinary.uploader.destroy(public_id)
     }catch(error){
         console.log(error)

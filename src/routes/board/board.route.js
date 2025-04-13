@@ -10,23 +10,23 @@ import {
 } from './board.controller.js'
 
 import {
-    addBoardValidator,
+    boardValidator,
 } from '../../validators/index.js'
 import  {validate} from '../../middlewares/validator.middleware.js'
 
 
 
-import {verifyJWT, verifyProjectAdmin, verifyBoardExist} from '../../middlewares/authorize.js'
+import {verifyJWT, verifyProjectAdmin, verifyBoardExist, verifyProjectMember} from '../../middlewares/authorize.js'
 router.use(verifyJWT)
-router.use(verifyProjectAdmin)
-
-router.post('/add-board', addBoardValidator(), validate, addBoard)
-
+router.use(verifyProjectMember)
+router.post('/add-board', verifyProjectAdmin, boardValidator(), validate, addBoard)
+//verify board exists
 router.use(verifyBoardExist)
+router.get('/get-board', boardDetails)
+router.use(verifyProjectAdmin)
 router.patch('/update-board-position', updateBoardPosition)
 router.delete('/delete-board', deleteBoard)
 router.patch('/update-board-details', addBoardValidator(), validate, updateBoardDetails)
-router.get('/get-board', boardDetails)
 
 
 
