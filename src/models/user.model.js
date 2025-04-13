@@ -1,4 +1,4 @@
-import mongoose from "mongoose"
+import mongoose, { Schema } from 'mongoose'
 import crypto from "crypto"
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"

@@ -26,7 +26,7 @@ router.get('/get-board', boardDetails)
 router.use(verifyProjectAdmin)
 router.patch('/update-board-position', updateBoardPosition)
 router.delete('/delete-board', deleteBoard)
-router.patch('/update-board-details', addBoardValidator(), validate, updateBoardDetails)
+router.patch('/update-board-details', boardValidator(), validate, updateBoardDetails)
 
 
 

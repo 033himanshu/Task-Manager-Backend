@@ -12,7 +12,7 @@ import {
     me,
 } from './user.controller.js'
 
-import {userUpdateProfileValidator, userUpdateCurrentPasswordValidator} from "../../validators/index.js"
+import {userUpdateProfileValidator, userUpdateCurrentPasswordValidator, userForgotPasswordValidator} from "../../validators/index.js"
 import  {validate} from "../../middlewares/validator.middleware.js"
 
 

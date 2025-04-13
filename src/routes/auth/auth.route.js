@@ -14,7 +14,7 @@ import  {validate} from "../../middlewares/validator.middleware.js"
 const router = express.Router()
 import { verifyJWT } from "../../middlewares/authorize.js"
 
-router.route('/register').post(userRegisterValidator(), validate, register)
+router.post('/register', userRegisterValidator(), validate, register)
 router.post('/login', userLoginValidator(), validate, login)
 router.post('/refresh-access-token', refreshAccessToken)
 //secured routes

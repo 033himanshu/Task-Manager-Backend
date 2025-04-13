@@ -21,6 +21,7 @@ import {
 import {
     createTaskValidator,
     updateTaskMemberValidator,
+    createSubTaskValidator,
 } from '../../validators/index.js'
 import  {validate} from '../../middlewares/validator.middleware.js'
 

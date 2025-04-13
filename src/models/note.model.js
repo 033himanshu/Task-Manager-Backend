@@ -1,6 +1,6 @@
-import mongoose from "mongoose";
+import mongoose, { Schema } from 'mongoose'
 
-const userSchema = new mongoose.Schema({
+const noteSchema = new mongoose.Schema({
     project: {
         type: Schema.Types.ObjectId,
         ref: "Project",
@@ -17,4 +17,4 @@ const userSchema = new mongoose.Schema({
     },
 }, {timestamps: true});
 
-export const User = mongoose.model("User", userSchema)
+export const Note = mongoose.model("Note", noteSchema)
