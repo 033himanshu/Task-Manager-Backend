@@ -5,14 +5,8 @@ import jwt from "jsonwebtoken"
 import {resetPasswordMainGenContent, emailVerificationMailgenContent, sendMail} from "../utils/mail.js"
 const userSchema = new mongoose.Schema({
     avatar : {
-        type : {
-            url : String,
-            localPath : String,
-        },
-        default : {
-            url : "https://avatar.iran.liara.run/public/18",
-            localPath : "",
-        }
+        type : String,
+        default : 'https://avatar.iran.liara.run/public/18',
     },
     username : {
         type: String,
@@ -44,10 +38,10 @@ const userSchema = new mongoose.Schema({
     refreshToken: {
         type: String,
     },
-    forgotPasswordToken: {
+    resetPasswordToken: {
         type: String,
     },
-    forgotPasswordExpiry: {
+    resetPasswordTokenExpiresTime: {
         type: Date,
     },
     emailVerificationToken: {
@@ -63,21 +57,27 @@ const port = process.env.port
 const base_url = process.env.BASE_URL
 
 userSchema.pre('save', async function(next){  
+    if(this.avatar===undefined){
+        this.avatar = 'https://avatar.iran.liara.run/public/18'
+    }
     if(this.isModified('email')){
         //send verification mail
         const {unHashedToken, hashedToken, tokenExpiry} = this.generateTemporaryToken()
         this.isEmailVerified = false
         this.emailVerificationToken = hashedToken
         this.emailVerificationExpiry = tokenExpiry
-        await sendMail(
-            emailVerificationMailgenContent(
+        await sendMail({
+            options : emailVerificationMailgenContent(
                 this.username, 
-                `http://localhost:${port}${base_url}/user/verify/${this.email}-${unHashedToken}`
-            )
+                `http://localhost:${port}${base_url}user/verify/${this.email}-${unHashedToken}`
+            ),
+            email : this.email,
+            subject : 'Email Verification For Task manager'
+            }
         )
         console.log("EMail sent")
     }
-    console.log("this.isModified('password')", this.isModified('password'), this.password)
+
     if(this.isModified('password')){
         this.password = await bcrypt.hash(this.password,10)
     }
@@ -90,11 +90,14 @@ userSchema.methods.sendResetPasswordToken = async function(){
     const {unHashedToken, hashedToken, tokenExpiry} = this.generateTemporaryToken()
     this.resetPasswordToken = hashedToken
     this.resetPasswordTokenExpiresTime = tokenExpiry
-    await sendMail(
-        resetPasswordMainGenContent(
+    await sendMail({
+        options : resetPasswordMainGenContent(
             this.username, 
-            `http://localhost:${port}${base_url}/user/reset-password/${this.email}-${unHashedToken}`
-        )
+            `http://localhost:${port}${base_url}user/reset-password/${this.email}-${unHashedToken}`
+        ),
+        email : this.email,
+        subject : 'Reset Password Verification mail'
+        }
     )
     console.log("EMail sent")
     await this.save()
@@ -109,6 +112,7 @@ userSchema.methods.generateRefreshToken = function(){
         { expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRE_TIME }
     )
 }
+
 userSchema.methods.generateAccessToken = function(){
     return jwt.sign(
         {

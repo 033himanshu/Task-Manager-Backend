@@ -1,11 +1,9 @@
-import express from 'express'
+import express, { urlencoded } from 'express'
 import cookieParser from 'cookie-parser'
 import dotenv from 'dotenv'
 dotenv.config({
     path : './.env'
 })
-
-
 import healthCheckRouter from './routes/healthcheck/healthcheck.route.js'
 import authRouter from './routes/auth/auth.route.js'
 import userRouter from './routes/user/user.route.js'
@@ -15,8 +13,6 @@ import boardRouter from './routes/board/board.route.js'
 import noteRouter from './routes/note/note.route.js'
 
 const app = express()
-
-
 
 app.use(express.json())
 app.use(express.urlencoded({extended: true}))

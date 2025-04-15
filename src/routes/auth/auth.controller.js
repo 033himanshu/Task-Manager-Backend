@@ -36,9 +36,8 @@ const register = asyncHandler(async (req, res)=>{
             },
         }
     ])
-
-    if(existingUser){
-        throw new ApiError(409, "User Already exists")
+    if(existingUser.length!==0){
+        throw new ApiError(409, "Username or email already Exists")
     }
 
     //create user
@@ -49,19 +48,14 @@ const register = asyncHandler(async (req, res)=>{
 
 const login = asyncHandler(async (req, res)=>{
     let {email, password, username} = req.body
+    console.log({email, password, username} )
     //email password should not be empty
-    if(!email || !password)
+    if((!email && !username) || !password)
         throw new ApiError(400, '(username or email) and password are required')
 
     // finding user
-    const user = await User.aggregate([
-        {
-            $match : {
-                $or : [{email}, {username}],
-            },
-        },
-    ])
-    if(!user || !await user.isPasswordCorrect(password))
+    const user = await User.findOne({$or : [{email}, {username}]})
+    if(!user || !(await user.isPasswordCorrect(password)))
         throw new ApiError(404, "Wrong Credentials")
 
     const {accessToken, refreshToken} = await generateAccessAndRefreshToken(user._id)
@@ -85,6 +79,7 @@ const logout = asyncHandler(async (req, res)=>{
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
     const token = req.cookies?.refreshToken || req?.headers?.authorization?.split(' ')[1]
+    console.log(token)
     if(!token)
         throw new ApiError(401, "Token not found")
 

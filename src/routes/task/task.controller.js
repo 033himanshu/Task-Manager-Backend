@@ -5,20 +5,22 @@ import {Board} from '../../models/board.model.js'
 import { ProjectMember } from '../../models/projectMember.model.js'
 import { Task } from '../../models/task.model.js'
 import {CloudinaryFolderEnum} from '../../utils/constants.js'
-import {uploadOnCloudinary, destroyOnCloudinary} from '../../utils/cloudinary.js'
+import {uploadOnCloudinary, destroyOnCloudinary, destroyFolderOnCloudinary} from '../../utils/cloudinary.js'
 import { SubTask } from '../../models/subTask.model.js'
-
+import mongoose from "mongoose"
+import { deleteAllSubTask } from '../../utils/deletionHandling.js'
 
 const createTask = asyncHandler(async (req, res)=>{
     const {title, description, assignedTo, projectId} = req.body
     const member = await ProjectMember.findOne({project: projectId, user:  assignedTo})
     if(!member)
         throw new ApiError(404, "Member Not found in Project Member")
-    const task = await Task.create({title, description, assignedTo, assignedTo: req._id})
+    const task = await Task.create({title, description, assignedTo, assignedBy: req._id})
     await req.board.tasks.push(task._id)
     await req.board.save()
     return res.status(201).json(new ApiResponse(201, {task}, "Task Created"))
 })
+
 const updateTask = asyncHandler(async (req, res)=>{
     const {title, description} = req.body
     req.task.title = title
@@ -27,7 +29,7 @@ const updateTask = asyncHandler(async (req, res)=>{
     return res.status(200).json(new ApiResponse(200, {}, "Task Updated"))
 })
 const taskDetails = asyncHandler(async (req, res)=>{
-    return res.status(200).json(new ApiResponse(200, {...req.task}, "Task Details"))
+    return res.status(200).json(new ApiResponse(200, req.task.toObject(), "Task Details"))
 })
 
 const addAttachments = asyncHandler(async (req, res)=>{
@@ -36,32 +38,41 @@ const addAttachments = asyncHandler(async (req, res)=>{
     if(!files || files.length===0)
         throw new ApiError(400, "No file uploaded")
     
-    files.forEach(async (file) =>{
-        const folder = `/${CloudinaryFolderEnum.ATTACHMENTS}/${taskId}`
-        const cloudinaryResponse = await uploadOnCloudinary(file.path, folder)
-        console.log(cloudinaryResponse)
-        req.task.attachments.push({
-            url : cloudinaryResponse.secure_url,
-            mimetype: cloudinaryResponse.mimetype,
-            size : cloudinaryResponse.size
+    const folder = `/${CloudinaryFolderEnum.ATTACHMENTS}/${taskId}`;
+
+    const attachments = await Promise.all(
+        files.map(async (file) => {
+            const cloudinaryResponse = await uploadOnCloudinary(file.path, folder);
+            return {
+                url: cloudinaryResponse.secure_url,
+                mimetype: cloudinaryResponse.format,
+                size: cloudinaryResponse.bytes,
+            };
         })
-    })
-    await req.task.save()
-    return res.status(200).json(new ApiResponse(200, {...req.task}, "Files added"))
+    );
+
+    req.task.attachments.push(...attachments);
+    await req.task.save();
+
+    return res.status(200).json(new ApiResponse(200, req.task.toObject(), "Files added"));
+
 })
 const deleteAttachment = asyncHandler(async (req, res)=>{
-    const {attachmentIndex} = req.body
-    if(attachmentIndex<0 || attachmentIndex>=req.task.attachments.length)
-        throw new ApiError(400, "Invalid Attachment Index")
+    const {attachmentId, taskId} = req.body
+    const castedId = new mongoose.Types.ObjectId(attachmentId)
+    const folder = `${CloudinaryFolderEnum.ATTACHMENTS}/${taskId}`
+    const attachmentIndex = req.task.attachments.findIndex(id => (new mongoose.Types.ObjectId(id)).equals(castedId))
+    if(attachmentIndex===-1)
+        throw new ApiError(404, "Attachment doesn't exist")
+    
+    const attachmentUrl = req.task.attachments[attachmentIndex].url
 
-    const folder = `/${CloudinaryFolderEnum.ATTACHMENTS}/${taskId}`
-    const attachmentUrl = req.task.attachments[attachmentIndex]
     const cloudinaryResponse = await destroyOnCloudinary(attachmentUrl, folder)
     console.log(cloudinaryResponse)
     if(cloudinaryResponse.result === 'ok')
         req.task.attachments.splice(attachmentIndex, 1)
     await req.task.save()
-    res.status(200).json(new ApiResponse(200, {}, "Attachment Deleted"))
+    res.status(200).json(new ApiResponse(200, req.task.toObject(), "Attachment Deleted"))
 })
 
 
@@ -75,36 +86,58 @@ const updateAssignedMember = asyncHandler(async (req, res)=>{
     return res.status(200).json(new ApiResponse(200, {}, "Assinged Member updated"))
 })
 
-const changeBoardAndPosition = asyncHandler(async (req, res)=>{
-    const {taskId, boardId, newBoardId, newIndex} = req.body
+const changeBoardAndPosition = asyncHandler(async (req, res) => {
+    const { taskId, boardId, newBoardId, newIndex } = req.body;
 
-    let newBoard = undefined
-    if(newBoardId === boardId)
-        newBoard = req.board
-    else
-        newBoard = await Board.findById(newBoardId)
-
-    if(!newBoard)
-        throw new ApiError(404, "New Board Doesn't exists")
-    if(newIndex<0 || newIndex > newBoard.tasks.length)
-        throw new ApiError(400, "Invalid Index")
-
-    let boardLength = req.board.tasks.length
-    req.board.tasks = req.board.tasks.filter(id => id !== taskId)
-    if(req.board.tasks.length === boardLength){
-        throw new ApiError(404, "Task not belongs to this board")
+    const castedTaskId = new mongoose.Types.ObjectId(taskId);
+    let newBoard;
+    if (newBoardId === boardId) {
+        newBoard = req.board;
+    } else {
+        newBoard = await Board.findById(newBoardId);
     }
-    newBoard.tasks.splice(newIndex, 0, taskId)
-    await newBoard.save()
-    await req.board.save()
-    return res.status(200).json(200, {}, "Board and Position Changed")
-})
+
+    if (!newBoard) {
+        throw new ApiError(404, "New Board doesn't exist");
+    }
+
+    if (newIndex < 0 || newIndex > newBoard.tasks.length) {
+        throw new ApiError(400, "Invalid Index");
+    }
+
+    const initialLength = req.board.tasks.length;
+    req.board.tasks = req.board.tasks.filter(id => !(new mongoose.Types.ObjectId(id)).equals(castedTaskId));
+
+    if (req.board.tasks.length === initialLength) {
+        throw new ApiError(404, "Task does not belong to the current board");
+    }
+
+    newBoard.tasks.splice(newIndex, 0, castedTaskId);
+
+    await req.board.save();
+    if (newBoardId !== boardId) {
+        await newBoard.save();
+    }
+
+    return res.status(200).json(new ApiResponse(200, req.board.ObjectId(), "Board and Position Changed"));
+});
+
 const deleteTask = asyncHandler(async (req, res)=>{
-    await Task.findByIdAndDelete(req.taskId)
-    // TODO: delete all Subtasks
-    // TODO: remove task from board
+    try {
+        const folder = `${CloudinaryFolderEnum.ATTACHMENTS}/${req.body.taskId}`
+        console.log(folder)
+        await destroyFolderOnCloudinary(folder)
+    } catch (error) {
+        throw new ApiError(501, "Folder deletion Failed on Cloudinary")
+    }
+    await deleteAllSubTask(req.task.subTasks)
+    req.board.tasks = req.board.tasks.filter(id => !(new mongoose.Types.ObjectId(id)).equals(req.task._id))
+    await req.task.deleteOne()
+    await req.board.save()
     return res.status(204).json(new ApiResponse(204, {}, "Task Deleted"))
 })
+
+
 const createSubTask = asyncHandler (async (req, res)=>{
     const {title} = req.body
     const createdBy = req._id
@@ -121,23 +154,24 @@ const updateSubTask = asyncHandler(async (req, res)=>{
     return res.status(200).json(new ApiResponse(200, {}, "subTask Updated"))
 })
 const subTaskDetails = asyncHandler(async (req, res)=>{
-    return res.status(200).json(new ApiResponse(200, {...req.subTask}, "SubTask Details"))
+    return res.status(200).json(new ApiResponse(200, req.subTask.toObject(), "SubTask Details"))
 })
 
 const updateSubTaskPosition = asyncHandler(async (req, res)=>{
     const {newIndex, subTaskId} = req.body
+    const castedSubTaskId = new mongoose.Types.ObjectId(subTaskId)
     if(newIndex<0 || newIndex>=req.task.subTasks.length)
         throw new ApiError(400, "Invalid Index")
 
-    req.task.subTasks = req.tasks.subTasks.filter(id => id!==subTaskId)
-    req.task.subTasks.splice(newIndex, 0, subTaskId)
+    req.task.subTasks = req.task.subTasks.filter(id => !(new mongoose.Types.ObjectId(id).equals(castedSubTaskId)))
+    req.task.subTasks.splice(newIndex, 0, castedSubTaskId)
     await req.task.save()
-    return res.status(200).json(new ApiResponse(200, {}, "Update SubTaskPosition"))
+    return res.status(200).json(new ApiResponse(200, req.task.toObject(), "Update SubTaskPosition"))
 })
 const deleteSubTask = asyncHandler(async (req, res)=>{
     const {subTaskId} = req.body
-    await SubTask.findByIdAndDelete(subTaskId)
-    req.task.subTasks = req.tasks.subTasks.filter(id => id!==subTaskId)
+    await req.subTask.deleteOne()
+    req.task.subTasks = req.task.subTasks.filter(id => !(new mongoose.Types.ObjectId(id).equals(new mongoose.Types.ObjectId(subTaskId))))
     await req.task.save()
     return res.status(204).json(new ApiResponse(204, {}, "SubTask deleted"))
 })

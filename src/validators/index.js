@@ -1,6 +1,7 @@
 import { body } from "express-validator";
 import {
   AvailableUserRoles,
+  UserRolesEnum
 } from "../utils/constants.js";
 
 
@@ -25,6 +26,7 @@ const fullnameValidator = body("fullName")
 
 const roleValidator = body("role").notEmpty().withMessage("Role is required")
 .isIn(AvailableUserRoles).withMessage("Role is invalid")
+.not().isIn([UserRolesEnum.ADMIN]).withMessage("Change To Admin Role is Not Allowed")
 
 const userRegisterValidator = () => {
   return [
@@ -51,7 +53,6 @@ const userLoginValidator = () => {
 
 const userUpdateCurrentPasswordValidator = () => {
   return [
-    body("oldPassword").notEmpty().withMessage("Old password is required"),
     newPasswordValidator,
   ];
 };
@@ -96,7 +97,14 @@ const createTaskValidator = () => {
     body("title").notEmpty().withMessage("Title is required"),
     body("description").optional(),
     assignedToValidator,
-    body("board").notEmpty().withMessage("Board is required"),
+    body("boardId").notEmpty().withMessage("Board is required"),
+  ];
+};
+const updateTaskValidator = () => {
+  return [
+    body("title").notEmpty().withMessage("Title is required"),
+    body("description").optional(),
+    body("boardId").notEmpty().withMessage("Board is required"),
   ];
 };
 const createSubTaskValidator = () => {
@@ -121,6 +129,7 @@ export {
   createProjectValidator,
   boardValidator,
   createTaskValidator,
+  updateTaskValidator,
   createSubTaskValidator,
   updateTaskMemberValidator,
   notesValidator,

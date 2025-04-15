@@ -14,6 +14,6 @@ const port = process.env.PORT ?? 3000
 connectDB()
 .then(()=>{
     app.listen(port,()=>{
-        console.log(`server is listening on pert ${port}`)
+        console.log(`server is listening on port ${port}`)
     })
 })

@@ -1,8 +1,12 @@
 import Mailgen from 'mailgen'
 import nodemailer from 'nodemailer'
-
-const sendMail = async (email) => {
+import dotenv from 'dotenv'
+dotenv.config({
+    path : './.env'
+})
+const sendMail = async (data) => {
     // Configure mailgen by setting a theme and your product info
+    console.log(data)
     const mailGenerator = new Mailgen({
         theme: 'default',
         product: {
@@ -14,10 +18,10 @@ const sendMail = async (email) => {
         }
     });
     // Generate an HTML email with the provided contents
-    const emailHtml = mailGenerator.generate(email);
+    const emailHtml = mailGenerator.generate(data.options);
 
     // Generate the plaintext version of the e-mail (for clients that do not support HTML)
-    const emailText = mailGenerator.generatePlaintext(email);
+    const emailText = mailGenerator.generatePlaintext(data.options);
 
 
     // Create a nodemailer transporter instance which is responsible to send a mail
@@ -29,11 +33,10 @@ const sendMail = async (email) => {
             pass: process.env.NODEMAILER_SMTP_PASSWORD,
         },
     });
-
     const mail = {
         from: "mail.taskmanager@example.com", // We can name this anything. The mail will go to your Mailtrap inbox
-        to: options.email, // receiver's mail
-        subject: options.subject, // mail subject
+        to: data.email, // receiver's mail
+        subject: data.subject, // mail subject
         text: emailText, // mailgen content textual variant
         html: emailHtml, // mailgen content html variant
     };

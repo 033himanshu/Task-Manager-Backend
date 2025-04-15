@@ -2,7 +2,7 @@ import {User} from "../../models/user.model.js"
 import { asyncHandler } from "../../utils/async-handler.js"
 import {ApiError} from "../../utils/api-error.js"
 
-import { destroyOnCloudinary, replaceOnCloudinary, uploadOnCloudinary } from "../../utils/cloudinary.js"
+import { destroyOnCloudinary, replaceOnCloudinary, uploadOnCloudinary, destroyFolderOnCloudinary} from "../../utils/cloudinary.js"
 import { ApiResponse } from "../../utils/api-response.js"
 
 import {CloudinaryFolderEnum} from '../../utils/constants.js'
@@ -39,6 +39,7 @@ const me = asyncHandler(async (req, res)=>{
         throw new ApiError(422, "User not exists")
 
     return res.status(200).json(new ApiResponse(200, {
+        _id : user._id,
         avatar : user.avatar,
         username: user.username,
         fullName:user.fullName,
@@ -52,6 +53,8 @@ const resendEmailVerification = asyncHandler(async (req, res)=>{
     const user = await User.findById(req._id)
     if(!user)
         throw new ApiError(422, "User not exist")
+    if(user.isEmailVerified)
+        throw new ApiError(409, "User Email Already Verified")
     user.emailVerificationToken = undefined
     user.emailVerificationExpiry = undefined
     user.markModified("email")
@@ -76,7 +79,7 @@ const updateProfile = asyncHandler (async (req, res)=>{
             errors.push("Username already in use")
         }
     }
-    if(errors){
+    if(errors.length!==0){
         throw new ApiError(409, "Data Already exists", errors)
     }
 
@@ -88,12 +91,12 @@ const updateProfile = asyncHandler (async (req, res)=>{
 })
 
 const updatePassword = asyncHandler (async (req, res)=>{
-    let {currentPassword, newPassword} = req.body
+    let {oldPassword, password} = req.body
     const user = await User.findById(req._id)
-    if(!await user.isPasswordCorrect(currentPassword))
+    if(!await user.isPasswordCorrect(oldPassword))
         throw new ApiError(400, "Current Password is Wrong")
        
-    user.password = newPassword
+    user.password = password
     await user.save()
     return res.status(200).json(new ApiResponse(200, {}, "Password Updated"))
 })
@@ -128,12 +131,25 @@ const resetPassword = asyncHandler (async (req, res)=>{
 })
 
 const deleteAccount =  asyncHandler (async (req, res)=>{
+
+    // TODO : Delete all the related project, tasks...
     let {password} = req.body
     const user = await User.findById(req._id)
     if(!user)
         throw new ApiError(400, "User Not Exists")
     if(!await user.isPasswordCorrect(password))
         throw new ApiError(400, "Wrong Password")
+    if(user.avatar.indexOf('https://res.cloudinary.com')!==-1){
+        try {
+            const folder = `${CloudinaryFolderEnum.AVATAR}/${user._id}`
+            const cloudinaryResponse = await destroyFolderOnCloudinary(folder)
+            console.log(cloudinaryResponse)
+            user.avatar = undefined
+        } catch (error) {
+            throw new ApiError(501, "Folder deletion Failed on Cloudinary")
+        }
+    }
+    // return res.send("all good till now")
     await User.findByIdAndDelete(req._id)
     res.cookie("accessToken", "", {maxAge : 0}).cookie("refreshToken", "", {maxAge : 0})
     return res.status(204).json(new ApiResponse(204, {}, "Account Deleted Successfully"))
@@ -144,15 +160,20 @@ const updateAvatar = asyncHandler (async(req, res)=>{
     if(!user)
         throw new ApiError(400, "User not exists")
     const folder = `/${CloudinaryFolderEnum.AVATAR}/${user._id}`
-    if(!user.avatar){
-        const cloudinaryResponse = await uploadOnCloudinary(req.file.path, folder)
-        user.avatar = cloudinaryResponse.secure_url
-        await user.save()
+    if(user.avatar.indexOf('https://res.cloudinary.com')===-1){
+        try {
+            const cloudinaryResponse = await uploadOnCloudinary(req.file.path, folder)
+            user.avatar = cloudinaryResponse.secure_url
+            console.log(cloudinaryResponse)
+            await user.save()
+        } catch (error) {
+            throw new ApiError(501, "Error while uploading avatar on cloudinary")
+        }
     }else{
         await replaceOnCloudinary(user.avatar, req.file.path, folder)
     }
     // console.log(cloudinaryResponse)
-    return res.status(200).json(new ApiResponse(200, {}, "Profile Picture Updated"))
+    return res.status(200).json(new ApiResponse(200, {avatar : user.avatar}, "Profile Picture Updated"))
 })
 
 const deleteAvatar = asyncHandler (async(req, res)=>{
@@ -160,18 +181,17 @@ const deleteAvatar = asyncHandler (async(req, res)=>{
     const folder = `${CloudinaryFolderEnum.AVATAR}/${user._id}`
     if(!user)
         throw new ApiError(400, "User not exists")
-    if(user.avatar){
-        const cloudinaryResponse = await destroyOnCloudinary(user.avatar, folder)
-        console.log(cloudinaryResponse)
-        if(cloudinaryResponse.result === 'ok')
-            user.profilePicture = undefined
-        await user.save()
+    if(user.avatar.indexOf('https://res.cloudinary.com')!==-1){
+        try {
+            const cloudinaryResponse = await destroyOnCloudinary(user.avatar, folder)
+            console.log(cloudinaryResponse)
+            user.avatar = undefined
+            await user.save()
+        } catch (error) {
+            throw new ApiError(501, "Error while deleting avatar on cloudinary")
+        }
     }
-    // else{
-    //     throw new ApiError(400, "Profile Image Doesn't exists")
-    // }
-    // console.log(cloudinaryResponse)
-    return res.status(200).json(new ApiResponse(200, {}, "Profile Picture Deleted"))
+    return res.status(200).json(new ApiResponse(200, {avatar : user.avatar}, "Profile Picture Deleted"))
 })
 
 

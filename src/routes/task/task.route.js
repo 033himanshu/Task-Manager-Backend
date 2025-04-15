@@ -22,12 +22,15 @@ import {
     createTaskValidator,
     updateTaskMemberValidator,
     createSubTaskValidator,
+    updateTaskValidator,
 } from '../../validators/index.js'
 import  {validate} from '../../middlewares/validator.middleware.js'
 
 import {upload} from '../../middlewares/multer.middleware.js'
 
 import {verifyJWT, verifyTaskExist, verifyBoardExist,  verifyProjectAdmin,  verifyAssignedTaskMember, verifyProjectMember, verifySubTaskExist,} from '../../middlewares/authorize.js'
+router.post('/add-attachments', verifyJWT,  upload.array('files', 10), verifyProjectMember, verifyProjectAdmin, verifyBoardExist, verifyTaskExist, addAttachments)
+
 router.use(verifyJWT)
 
 router.use(verifyProjectMember)
@@ -36,7 +39,6 @@ router.post('/create-task', verifyProjectAdmin, createTaskValidator(), validate,
 
 router.use(verifyTaskExist)
 // member
-router.post('/add-attachments',  upload.array('files', 10), addAttachments)
 router.delete('/delete-attachment',  deleteAttachment)
 router.get('/task-details',  taskDetails)
 
@@ -49,7 +51,7 @@ router.patch('/update-subtask-position',  verifyAssignedTaskMember, verifySubTas
 router.delete('/delete-subtask',  verifyAssignedTaskMember, verifySubTaskExist, deleteSubTask)
 
 router.use(verifyProjectAdmin)
-router.patch('/update-task', createTaskValidator(), validate, updateTask)
+router.patch('/update-task', updateTaskValidator(), validate, updateTask)
 router.patch('/update-assigned-member', updateTaskMemberValidator(), validate, updateAssignedMember)
 router.patch('/change-board-and-position', changeBoardAndPosition)
 router.delete('/delete-task', deleteTask)

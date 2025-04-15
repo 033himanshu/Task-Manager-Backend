@@ -8,7 +8,7 @@ const addNote = asyncHandler(async (req, res)=>{
     const {projectId, content} = req.body
     const createdBy = req._id
     const note = await Note.create({project: projectId, createdBy, content})
-    return res.status(201).json(new ApiResponse(201, {...note}, "Board Updated"))
+    return res.status(201).json(new ApiResponse(201, note.toObject(), "Board Updated"))
 })
 const getNotes = asyncHandler(async (req, res)=>{
     const notes = await Note.find({project : req.body.projectId})
@@ -22,7 +22,7 @@ const updateNote = asyncHandler(async (req, res)=>{
         throw new ApiError(404, "Note not exists")
     note.content = content
     await note.save()
-    return res.status(200).json(new ApiResponse(201, {}, "Note Updated"))
+    return res.status(200).json(new ApiResponse(201, note.toObject(), "Note Updated"))
 })
 
 const deleteNote = asyncHandler(async (req, res)=>{

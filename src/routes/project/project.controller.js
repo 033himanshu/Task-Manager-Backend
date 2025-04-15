@@ -5,12 +5,14 @@ import { Project } from '../../models/project.model.js'
 import {User} from '../../models/user.model.js'
 import { ProjectMember } from '../../models/projectMember.model.js'
 import {UserRolesEnum} from '../../utils/constants.js'
-
+import mongoose from "mongoose"
+import { deleteAllBoards, deleteAllNotes, deleteAllProjectMembers } from '../../utils/deletionHandling.js'
+import { Task } from '../../models/task.model.js'
 
 const createNewProject = asyncHandler(async (req, res)=>{
     const {name, description} = req.body
     const createdBy = req._id
-    const existingProject = await Project.find({name, createdBy})
+    const existingProject = await Project.findOne({name, createdBy})
     if(existingProject){
         throw new ApiError(409, "Project already Exists with same name")
     }
@@ -32,48 +34,51 @@ const updateProjectDetails = asyncHandler(async (req, res)=>{
     req.project.name = name
     req.project.description = description
     await req.project.save()
-    return res.status(200).json(new ApiResponse(200, {}, "Project Details updated"))
+    return res.status(200).json(new ApiResponse(200, req.project.toObject(), "Project Details updated"))
 })
 
 
 const addMemberToProject = asyncHandler(async (req,res)=>{
     const {email, projectId, role} = req.body
 
-    const user = await User.find({email})
+    const user = await User.findOne({email})
     if(!user)
         throw new ApiError(404, "Member not exists")
 
-    const projectMember = await ProjectMember.find({user:user._id, project: projectId})
+    let projectMember = await ProjectMember.findOne({user:user._id, project: projectId})
     if(projectMember)
         throw new ApiError(409, `Member Already exist in Project`)
-    await ProjectMember.create({user: user._id, project: projectId, role})
-    return res.status(201).json(new ApiResponse(201, {}, "Member Added in Project"))
+    projectMember = await ProjectMember.create({user: user._id, project: projectId, role})
+    return res.status(201).json(new ApiResponse(201, projectMember.toObject(), "Member Added in Project"))
 })
 
 const updateMemberRole = asyncHandler(async (req, res)=>{
     const {userId, projectId, role} = req.body
 
+    if((new mongoose.Types.ObjectId(userId)).equals(req.project.createdBy))
+        throw new ApiError(400, "Can't Update Admin's Role")
     const user = await User.findById(userId)
     if(!user)
         throw new ApiError(404, "Member not exists")
-
-    const projectMember = await ProjectMember.find({user:user._id, project: projectId})
+    
+    const projectMember = await ProjectMember.findOne({user:user._id, project: projectId})
     if(!projectMember)
         throw new ApiError(404, `Member not exists in Project`)
     projectMember.role = role
     await projectMember.save()
-    return res.status(200).json(new ApiResponse(200, {}, "Member Role updated"))
+    return res.status(200).json(new ApiResponse(200, projectMember.toObject(), "Member Role updated"))
 })
 
 const removeMember = asyncHandler(async (req, res)=>{
     const {userId, projectId} = req.body
 
-    const user = await User.findById(userId)
-    if(!user)
-        throw new ApiError(404, "Member not exists")
-
+    if((new mongoose.Types.ObjectId(userId)).equals(req.project.createdBy))
+        throw new ApiError(400, "Can't Delete Admin of Project")
+    const assignedTask = await Task.findOne({assignedTo : userId})
+    if(assignedTask){
+        throw new ApiError(422, "Member Assigned to some task, can't removed")
+    }
     await ProjectMember.findOneAndDelete({user:user._id, project: projectId})
-
     return res.status(204).json(new ApiResponse(204, {}, "Member Removed"))
 })
 
@@ -82,7 +87,7 @@ const projectDetails =asyncHandler(async (req, res)=>{
 
     const projectMembers = await ProjectMember.aggregate([
         {
-            $match : {project: projectId}
+            $match : {project: new mongoose.Types.ObjectId(projectId)}
         },
         {
             $lookup: {
@@ -101,26 +106,25 @@ const projectDetails =asyncHandler(async (req, res)=>{
                 email : "$userDetails.email",
                 avatar : "$userDetails.avatar",
                 role : 1,
-                board: 1,
             }
         }
     ])
-    // TODO : 
-    return res.status(200).json(new ApiResponse(200, {...req.project, projectMembers}, "Project Details Fetched"))
+    return res.status(200).json(new ApiResponse(200, {...(req.project.toObject()), projectMembers}, "Project Details Fetched"))
 })
 
 const deleteProject = asyncHandler(async (req, res)=>{
-    
-    return res.status(501).json(501, {}, "Not Implemented yet, Sorry for incovinience")
+    await deleteAllBoards()
+    await deleteAllNotes()
+    await deleteAllProjectMembers()
+    await req.project.deleteOne()
+    return res.status(501).json(501, {}, "Project Deleted")
 })
 
 const allProjects = asyncHandler(async (req, res)=>{
     const createdBy  = req._id
-    const projects = await Project.find({createdBy})
-    return res.status(200).json(new ApiResponse(200, {...projects}, "All Projects"))
+    const projects = await Project.find({})
+    return res.status(200).json(new ApiResponse(200, projects, "All Projects"))
 })
-
-
 
 
 

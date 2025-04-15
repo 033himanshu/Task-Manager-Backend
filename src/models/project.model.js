@@ -11,7 +11,7 @@ const projectSchema = new mongoose.Schema({
     board : {
         type : [
             {
-              type: mongoose.Schema.Types.ObjectId,
+              type: Schema.Types.ObjectId,
               ref: 'Board',
             },
         ],

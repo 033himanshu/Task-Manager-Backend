@@ -5,7 +5,7 @@ const boardSchema = new mongoose.Schema({
         type: String,
         required : true,
     },
-    descrpition: {
+    description: {
         type: String,
         required : true,
     },

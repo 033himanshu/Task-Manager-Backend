@@ -22,9 +22,9 @@ const taskSchema = new mongoose.Schema({
     attachments: {
         type: [
           {
-            url: String,
-            mimetype: String,
-            size: Number,
+            url: {type: String},
+            mimetype: {type : String},
+            size: {type: Number},
           },
         ],
         default: [],
