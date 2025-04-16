@@ -4,10 +4,14 @@ import {ApiError} from '../../utils/api-error.js'
 import { Project } from '../../models/project.model.js'
 import {User} from '../../models/user.model.js'
 import { ProjectMember } from '../../models/projectMember.model.js'
-import {UserRolesEnum} from '../../utils/constants.js'
+import {ProjectMemberStatusEnum, UserRolesEnum} from '../../utils/constants.js'
 import mongoose from "mongoose"
 import { deleteAllBoards, deleteAllNotes, deleteAllProjectMembers } from '../../utils/deletionHandling.js'
 import { Task } from '../../models/task.model.js'
+import { Board } from '../../models/board.model.js'
+import {TaskStatusEnum} from '../../utils/constants.js'
+import { isTokenMatch } from '../../utils/temporaryToken.js'
+import { isUserExist } from '../../utils/userVerification.js'
 
 
 const getAllProjectsDetails = async (userId)=>{
@@ -54,146 +58,129 @@ const getAllProjectsDetails = async (userId)=>{
 }
 
 const getAllDetailsOfProject = async (projectId) => {
-    try {
-        return await Project.aggregate([
+  try {
+    return await Project.aggregate([
+      {
+        $match: { _id: new mongoose.Types.ObjectId(projectId) }
+      },
+      {
+        $facet: {
+          members: [
             {
-                $match : {_id : new mongoose.Types.ObjectId(projectId)}
+              $lookup: {
+                from: "projectmembers",
+                localField: "_id",
+                foreignField: "project",
+                as: "projectMembers"
+              }
             },
+            { $unwind: "$projectMembers" },
             {
-                $facet: {
-                    members :   [
-                        {
-                            $lookup : {
-                                from : "projectmembers",
-                                localField : "_id",
-                                foreignField : "project",
-                                as : "projectMembers"
-                            },
-                        },
-                        {
-                            $unwind : "$projectMembers"
-                        },
-                        {
-                            $project : {
-                                role : "$projectMembers.role",
-                                user : "$projectMembers.user",
-                                _id : 0
-                            }
-                        },
-                        {
-                            $lookup : {
-                                from : "users",
-                                localField : "user",
-                                foreignField : "_id",
-                                as : "userDetails"
-                            }
-                        },
-                        {
-                            $unwind : "$userDetails",
-                        },
-                        {
-                            $project : {
-                                  role : 1,
-                                _id : "$userDetails._id",
-                                  username: "$userDetails.username",
-                                  email : "$userDetails.email",
-                                  fullName: "$userDetails.username",
-                                  avatar : "$userDetails.avatar",
-                            }
-                        },
-                      ],
-                          notes :  [
-                        {
-                            // geting projectMEmbers
-                            $lookup : {
-                                from : "notes",
-                                localField : "_id",
-                                foreignField : "project",
-                                as : "notes"
-                            },
-                        },
-                        {
-                            $unwind : "$notes"
-                        },
-                        {
-                            $project : {
-                                content : "$notes.content",
-                                createdBy : "$notes.createdBy",
-                                _id : "$notes._id"
-                            }
-                        },
-                      ],
-                      board : [
-                        {
-                          $unwind : "$board"
-                        },
-                        {
-                           $lookup : {
-                              from : "boards",
-                              localField : "board",
-                              foreignField : "_id",
-                              as : "boardDetails"
-                            },
-                        },
-                        {
-                           $unwind : "$boardDetails"
-                        },
-                      {
-                        $lookup: {
-                          from: "tasks",
-                          localField: "boardDetails.tasks",
-                          foreignField: "_id",
-                          as: "tasks"
-                        }
-                      },
-                      {
-                        $unwind: {
-                          path: "$tasks",
-                          preserveNullAndEmptyArrays: true
-                        }
-                      },
-                      {
-                        $lookup: {
-                          from: "subtasks",
-                          localField: "tasks.subTasks",
-                          foreignField: "_id",
-                          as: "tasks.subTasks"
-                        }
-                      },
-                      {
-                        $group: {
-                          _id: "$_id",
-                          name: { $first: "$name" },
-                          description: { $first: "$description" },
-                          createdBy: { $first: "$createdBy" },
-                          tasks: {
-                            $push: {
-                              _id: "$tasks._id",
-                              title: "$tasks.title",
-                              description: "$tasks.description",
-                              assignedTo: "$tasks.assignedTo",
-                              assignedBy: "$tasks.assignedBy",
-                              attachments: "$tasks.attachments",
-                              subTasks: "$tasks.subTasks"
-                            }
-                          }
-                        }
-                      }
-                    ]
-                },
+              $lookup: {
+                from: "users",
+                localField: "projectMembers.user",
+                foreignField: "_id",
+                as: "userDetails"
+              }
             },
+            { $unwind: "$userDetails" },
             {
               $project: {
-                members: "$members",
-                notes: "$notes",
-                boards: "$board"
-              },
+                _id: "$userDetails._id",
+                username: "$userDetails.username",
+                email: "$userDetails.email",
+                avatar: "$userDetails.avatar",
+                role: "$projectMembers.role"
               }
-        ])
-    } catch (error) {
-        throw new ApiError(501, `Error while get All Details of Project, ${error}`)
-    }
-}
+            }
+          ],
+          notes: [
+            {
+              $lookup: {
+                from: "notes",
+                localField: "_id",
+                foreignField: "project",
+                as: "notes"
+              }
+            },
+            { $unwind: "$notes" },
+            {
+              $project: {
+                _id: "$notes._id",
+                content: "$notes.content",
+                createdBy: "$notes.createdBy"
+              }
+            }
+          ],
+          boardDetails: [
+            { $unwind: "$boards" },
+            {
+              $lookup: {
+                from: "boards",
+                localField: "boards",
+                foreignField: "_id",
+                as: "boardDetails"
+              }
+            },
+            { $unwind: "$boardDetails" },
+            {
+              $lookup: {
+                from: "tasks",
+                localField: "boardDetails.tasks",
+                foreignField: "_id",
+                as: "taskDetails"
+              }
+            },
+            { $unwind: { path: "$taskDetails", preserveNullAndEmptyArrays: true } },
+            {
+              $lookup: {
+                from: "subtasks",
+                localField: "taskDetails.subTasks",
+                foreignField: "_id",
+                as: "taskDetails.subTasks"
+              }
+            },
+            {
+              $group: {
+                _id: "$boardDetails._id",
+                name: { $first: "$boardDetails.name" },
+                description: { $first: "$boardDetails.description" },
+                createdBy: { $first: "$boardDetails.createdBy" },
+                tasks: {
+                  $push: {
+                    _id: "$taskDetails._id",
+                    title: "$taskDetails.title",
+                    description: "$taskDetails.description",
+                    assignedTo: "$taskDetails.assignedTo",
+                    assignedBy: "$taskDetails.assignedBy",
+                    attachments: "$taskDetails.attachments",
+                    subTasks: {
+                      $map: {
+                        input: "$taskDetails.subTasks",
+                        as: "st",
+                        in: "$$st._id"  // Only include IDs
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        $project: {
+          members: "$members",
+          notes: "$notes",
+          boards: "$boardDetails"  
+        }
+      }
+    ]);
+  } catch (error) {
+    throw new ApiError(501, `Error while get All Details of Project, ${error}`);
+  }
+};
+
 const getBoardsWithTaskDetails = async (projectId) => {
     try {
         return await Project.aggregate([
@@ -258,8 +245,13 @@ const createNewProject = asyncHandler(async (req, res)=>{
     if(existingProject){
         throw new ApiError(409, "Project already Exists with same name")
     }
-    const project = await Project.create({name, description,createdBy})
-    await ProjectMember.create({user: createdBy, project: project._id, role: UserRolesEnum.ADMIN})
+
+    const todoBoard = await Board.create({name : TaskStatusEnum.TODO, description: TaskStatusEnum.TODO, createdBy})
+    const inProgressBoard = await Board.create({name : TaskStatusEnum.IN_PROGRESS, description: TaskStatusEnum.IN_PROGRESS, createdBy})
+    const completedBoard = await Board.create({name:TaskStatusEnum.DONE, description: TaskStatusEnum.DONE, createdBy})
+    const boards = [todoBoard._id, inProgressBoard._id, completedBoard._id]
+    const project = await Project.create({name, description,createdBy, boards}) 
+    await ProjectMember.create({user: createdBy, project: project._id, role: UserRolesEnum.ADMIN, status : ProjectMemberStatusEnum.ACCEPTED})
     
     return res.status(201).json(new ApiResponse(201, {projectId: project._id}, "Project Created"))
 })
@@ -281,17 +273,74 @@ const updateProjectDetails = asyncHandler(async (req, res)=>{
 
 
 const addMemberToProject = asyncHandler(async (req,res)=>{
-    const {email, projectId, role} = req.body
+    const {userId, projectId, role} = req.body
 
-    const user = await User.findOne({email})
-    if(!user)
-        throw new ApiError(404, "Member not exists")
+    let user = undefined
+    try{
+      user = await isUserExist(userId)
+    }catch(error){
+      throw error
+    }
 
     let projectMember = await ProjectMember.findOne({user:user._id, project: projectId})
-    if(projectMember)
+    if(projectMember.status === ProjectMemberStatusEnum.ACCEPTED)
         throw new ApiError(409, `Member Already exist in Project`)
-    projectMember = await ProjectMember.create({user: user._id, project: projectId, role})
+    else if(projectMember.status === ProjectMemberStatusEnum.PENDING){
+        if(projectMember.tokenExpiry < Date.now())
+            await projectMember.deleteOne()
+        throw new ApiError(409, `Already Requested, Request is Pending`)
+    }
+    console.log(req.project.name, user)
+    projectMember = await ProjectMember.create({user: user._id, project: projectId, role })
+    await projectMember.SendJoinProjectRequestMail(req.project.name, user)
     return res.status(201).json(new ApiResponse(201, projectMember.toObject(), "Member Added in Project"))
+})
+
+const acceptRequest = asyncHandler (async (req, res)=>{
+  let {projectMemberId, token } = req.params
+  const member = await ProjectMember.findById(projectMemberId)
+
+  if(!member)
+      throw new ApiError(400, "Invalid Request")
+  
+  if(member.status !== ProjectMemberStatusEnum.PENDING)
+      throw new ApiError(422, "User Already Reacted")
+  if(member.tokenExpiry<Date.now() ){
+      member.requestToken = undefined
+      user.tokenExpiry = undefined
+      throw new ApiError(422, "Request Link Expired")
+  }
+  if(!isTokenMatch(token, member.requestToken))
+      throw new ApiError(400, "Invalid Token")
+
+  member.requestToken = undefined
+  member.tokenExpiry = undefined
+  member.status = ProjectMemberStatusEnum.ACCEPTED
+  await member.save()
+  return res.status(200).json( new ApiResponse(200, {}, "Request Accepted..."))
+})
+const rejectRequest = asyncHandler (async (req, res)=>{
+  let {projectMemberId, token } = req.params
+  const member = await ProjectMember.findById(projectMemberId)
+
+  if(!member)
+      throw new ApiError(400, "Invalid Request")
+  
+  if(member.status !== ProjectMemberStatusEnum.PENDING)
+      throw new ApiError(422, "User Already Accepted")
+  if(member.tokenExpiry<Date.now() ){
+      member.requestToken = undefined
+      user.tokenExpiry = undefined
+      throw new ApiError(422, "Request Link Expired")
+  }
+  if(!isTokenMatch(token, member.requestToken))
+      throw new ApiError(400, "Invalid Token")
+
+  // member.requestToken = undefined
+  // member.tokenExpiry = undefined
+  // member.status = ProjectMemberStatusEnum.ACCEPTED
+  await member.deleteOne()
+  return res.status(200).json( new ApiResponse(200, {}, "Request Rejected..."))
 })
 
 const updateMemberRole = asyncHandler(async (req, res)=>{
@@ -299,7 +348,12 @@ const updateMemberRole = asyncHandler(async (req, res)=>{
 
     if((new mongoose.Types.ObjectId(userId)).equals(req.project.createdBy))
         throw new ApiError(400, "Can't Update Admin's Role")
-    const user = await User.findById(userId)
+    let user  = undefined
+    try{
+      user = await isUserExist(userId)
+    }catch(error){
+      throw error
+    }
     if(!user)
         throw new ApiError(404, "Member not exists")
     
@@ -316,10 +370,14 @@ const removeMember = asyncHandler(async (req, res)=>{
 
     if((new mongoose.Types.ObjectId(userId)).equals(req.project.createdBy))
         throw new ApiError(400, "Can't Delete Admin of Project")
-    const assignedTask = await Task.findOne({assignedTo : userId})
-    if(assignedTask){
-        throw new ApiError(422, "Member Assigned to some task, can't removed")
-    }
+    const assignedTasks = await Task.find({assignedTo : userId})
+    // if(assignedTask){
+    //     throw new ApiError(422, "Member Assigned to some task, can't removed")
+    // }
+    await Promise.all(assignedTasks.map(async task => {
+        task.assignedTo = undefined
+        return await task.save()
+    } ))
     await ProjectMember.findOneAndDelete({user:user._id, project: projectId})
     return res.status(204).json(new ApiResponse(204, {}, "Member Removed"))
 })
@@ -350,13 +408,12 @@ const allProjects = asyncHandler(async (req, res)=>{
     return res.status(200).json(new ApiResponse(200, projects, "All Projects"))
 })
 
-
-
-
 export {
     createNewProject,
     updateProjectDetails,
     addMemberToProject,
+    acceptRequest,
+    rejectRequest,
     updateMemberRole,
     removeMember,
     projectDetails,

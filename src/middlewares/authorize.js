@@ -4,7 +4,7 @@ import { ApiError } from "../utils/api-error.js"
 import {Project} from "../models/project.model.js"
 import {Board} from "../models/board.model.js"
 import { ProjectMember } from "../models/projectMember.model.js"
-import { UserRolesEnum } from "../utils/constants.js"
+import { ProjectMemberStatusEnum, UserRolesEnum } from "../utils/constants.js"
 import { Task } from "../models/task.model.js"
 import { SubTask } from "../models/subTask.model.js"
 import mongoose from "mongoose"
@@ -43,7 +43,7 @@ export const verifyProjectMember = asyncHandler(async (req, res, next)=>{
         throw new ApiError(404, "Project Not exists")
     }
     const projectMember = await ProjectMember.findOne({user: req._id, project: projectId})
-    if(projectMember) {
+    if(projectMember && projectMember.status != ProjectMemberStatusEnum.PENDING) {
         req.project = existingProject
         req.role = projectMember.role
         next()
@@ -96,4 +96,13 @@ export const verifyAssignedTaskMember = asyncHandler (async (req, res, next)=>{
     }
     else
         throw new ApiError(403, "Not Authorized to Perform Action")
+})
+
+export const isUserVerified = asyncHandler (async (req, res, next)=>{
+    let user= undefined
+    try{
+        user = await isUserExist(req._id)
+    }catch(error){
+        throw error
+    }
 })

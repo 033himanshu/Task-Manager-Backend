@@ -1,7 +1,8 @@
 import mongoose, { Schema } from 'mongoose'
-import crypto from "crypto"
+
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
+import {generateTemporaryToken} from "../utils/temporaryToken.js"
 import {resetPasswordMainGenContent, emailVerificationMailgenContent, sendMail} from "../utils/mail.js"
 const userSchema = new mongoose.Schema({
     avatar : {
@@ -62,7 +63,7 @@ userSchema.pre('save', async function(next){
     }
     if(this.isModified('email')){
         //send verification mail
-        const {unHashedToken, hashedToken, tokenExpiry} = this.generateTemporaryToken()
+        const {unHashedToken, hashedToken, tokenExpiry} = generateTemporaryToken()
         this.isEmailVerified = false
         this.emailVerificationToken = hashedToken
         this.emailVerificationExpiry = tokenExpiry
@@ -87,7 +88,7 @@ userSchema.methods.isPasswordCorrect = async function(password){
     return await bcrypt.compareSync(password, this.password);
 }
 userSchema.methods.sendResetPasswordToken = async function(){
-    const {unHashedToken, hashedToken, tokenExpiry} = this.generateTemporaryToken()
+    const {unHashedToken, hashedToken, tokenExpiry} = generateTemporaryToken()
     this.resetPasswordToken = hashedToken
     this.resetPasswordTokenExpiresTime = tokenExpiry
     await sendMail({
@@ -122,23 +123,6 @@ userSchema.methods.generateAccessToken = function(){
         process.env.JWT_ACCESS_TOKEN_SECRET, 
         { expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRE_TIME }
     )
-}
-
-userSchema.methods.generateTemporaryToken = function(){
-    const unHashedToken = crypto.randomBytes(20).toString('hex')
-    const hashedToken = crypto.createHash("sha256")
-    .update(unHashedToken)
-    .digest("hex");
-    const tokenExpiry = Date.now() + 20 * 60 * 1000; 
-    return {unHashedToken, hashedToken, tokenExpiry}
-}
-
-userSchema.methods.isTokenMatch = function(unHashedToken, hashedToken){
-    const newHashedToken = crypto.createHash("sha256")
-    .update(unHashedToken)
-    .digest("hex");
-
-    return newHashedToken === hashedToken
 }
 
 export const User = mongoose.model("User", userSchema)

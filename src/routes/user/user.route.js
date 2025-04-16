@@ -10,6 +10,7 @@ import {
     deleteAccount,
     deleteAvatar,
     me,
+    getUserByPrefix,
 } from './user.controller.js'
 
 import {userUpdateProfileValidator, userUpdateCurrentPasswordValidator, userForgotPasswordValidator} from "../../validators/index.js"
@@ -36,6 +37,6 @@ router.post('/delete-avatar', deleteAvatar)
 router.post('/update-password', userUpdateCurrentPasswordValidator(), validate, updatePassword)
 router.post('/forgot-password', userForgotPasswordValidator(), validate, forgotPassword)
 router.post('/delete-account', deleteAccount)
-
+router.get('/get-user-with-prefix', getUserByPrefix)
 
 export default router

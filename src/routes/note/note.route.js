@@ -20,9 +20,10 @@ import {
 } from '../../validators/index.js'
 import  {validate} from '../../middlewares/validator.middleware.js'
 
-import {verifyJWT, verifyProjectAdmin, verifyProjectMember} from '../../middlewares/authorize.js'
+import {isUserVerified, verifyJWT, verifyProjectAdmin, verifyProjectMember} from '../../middlewares/authorize.js'
 
 router.use(verifyJWT)
+router.use(isUserVerified)
 router.use(verifyProjectMember)
 router.get('/get-notes', getNotes)
 router.use(verifyProjectAdmin)

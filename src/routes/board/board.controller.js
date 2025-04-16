@@ -82,8 +82,9 @@ const addBoard = asyncHandler(async (req, res)=>{
     if(result.length!==0 && result[0].boardMatch){
         throw new ApiError(409, "Board already exists with same name")
     }
+    
     const board = await Board.create({name, description, createdBy})
-    req.project.board.push(board._id)
+    req.project.boards.push(board._id)
     await req.project.save()
     return res.status(201).json(new ApiResponse(201, board.toObject(), "New Board Created"))
 })

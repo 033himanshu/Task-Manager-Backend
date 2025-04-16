@@ -96,7 +96,7 @@ const createTaskValidator = () => {
   return [
     body("title").notEmpty().withMessage("Title is required"),
     body("description").optional(),
-    assignedToValidator,
+    // assignedToValidator,
     body("boardId").notEmpty().withMessage("Board is required"),
   ];
 };
@@ -114,7 +114,7 @@ const createSubTaskValidator = () => {
 }
 const updateTaskMemberValidator = () =>{
   return [
-    assignedToValidator
+    // assignedToValidator
   ]
 }
 

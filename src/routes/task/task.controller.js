@@ -12,9 +12,11 @@ import { deleteAllSubTask } from '../../utils/deletionHandling.js'
 
 const createTask = asyncHandler(async (req, res)=>{
     const {title, description, assignedTo, projectId} = req.body
-    const member = await ProjectMember.findOne({project: projectId, user:  assignedTo})
-    if(!member)
-        throw new ApiError(404, "Member Not found in Project Member")
+    if(assignedTo){
+        const member = await ProjectMember.findOne({project: projectId, user:  assignedTo})
+        if(!member)
+            throw new ApiError(404, "Member Not found in Project Member")
+    }
     const task = await Task.create({title, description, assignedTo, assignedBy: req._id})
     await req.board.tasks.push(task._id)
     await req.board.save()
@@ -78,9 +80,11 @@ const deleteAttachment = asyncHandler(async (req, res)=>{
 
 const updateAssignedMember = asyncHandler(async (req, res)=>{
     const {projectId, assignedTo} = req.body
-    const member = await ProjectMember.findOne({project: projectId, user:  assignedTo})
-    if(!member)
-        throw new ApiError(404, "Member Not found in Project Member")
+    if(assignedTo){
+        const member = await ProjectMember.findOne({project: projectId, user:  assignedTo})
+        if(!member)
+            throw new ApiError(404, "Member Not found in Project Member")
+    }
     req.task.assignedTo = assignedTo
     await req.task.save()
     return res.status(200).json(new ApiResponse(200, {}, "Assinged Member updated"))
@@ -175,6 +179,7 @@ const deleteSubTask = asyncHandler(async (req, res)=>{
     await req.task.save()
     return res.status(204).json(new ApiResponse(204, {}, "SubTask deleted"))
 })
+
 export {
     createTask,
     updateTask,

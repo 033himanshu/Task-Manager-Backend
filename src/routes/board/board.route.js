@@ -16,8 +16,9 @@ import  {validate} from '../../middlewares/validator.middleware.js'
 
 
 
-import {verifyJWT, verifyProjectAdmin, verifyBoardExist, verifyProjectMember} from '../../middlewares/authorize.js'
+import {verifyJWT, verifyProjectAdmin, verifyBoardExist, verifyProjectMember, isUserVerified} from '../../middlewares/authorize.js'
 router.use(verifyJWT)
+router.use(isUserVerified)
 router.use(verifyProjectMember)
 router.post('/add-board', verifyProjectAdmin, boardValidator(), validate, addBoard)
 //verify board exists

@@ -92,9 +92,34 @@ const emailVerificationMailgenContent = (username, verificationUrl) => {
     }
 }
 
+const joinProjectRequestGenContent = (username, projectName, role, acceptLink, rejectLink) => {
+    return {
+        body: {
+          name: username,
+          intro: `${projectName} project Requested you to join them on Role of ${role.toUpperCase()}`,
+          action: {
+            instructions:
+              "To Accept Request click on the following button or link:",
+            button: [
+                {
+                    color: "#22BC66", // Optional action button color
+                    text: `Join ${projectName}`,
+                    link: acceptLink,
+                },{
+                    color: "#FF4742", // Optional action button color
+                    text: `Reject Request ${projectName}`,
+                    link: rejectLink,
+                }
+            ],
+          },
+          outro:"Need help, or have questions? Just reply to this email, we'd love to help.",
+        },
+    }
+};
 
 export  {
     sendMail,
     resetPasswordMainGenContent,
     emailVerificationMailgenContent,
+    joinProjectRequestGenContent,
 }

@@ -1,7 +1,7 @@
 import {User} from "../../models/user.model.js"
 import { asyncHandler } from "../../utils/async-handler.js"
 import {ApiError} from "../../utils/api-error.js"
-
+import { isTokenMatch } from "../../utils/temporaryToken.js"
 import { destroyOnCloudinary, replaceOnCloudinary, uploadOnCloudinary, destroyFolderOnCloudinary} from "../../utils/cloudinary.js"
 import { ApiResponse } from "../../utils/api-response.js"
 
@@ -23,7 +23,7 @@ const verifyEmail = asyncHandler(async (req, res) =>{
         user.emailVerificationExpiry = undefined
         throw new ApiError(422, "Verification Link Expired, Click on Resend Verification Link")
     }
-    if(!user.isTokenMatch(token, user.emailVerificationToken))
+    if(!isTokenMatch(token, user.emailVerificationToken))
         throw new ApiError(400, "Invalid Token")
 
     user.emailVerificationToken = undefined
@@ -120,7 +120,7 @@ const resetPassword = asyncHandler (async (req, res)=>{
     if(user.resetPasswordTokenExpiresTime<Date.now()){
         throw new ApiError(400, "Verification Link Expired..")
     }
-    if(!user.isTokenMatch(token, user.resetPasswordToken))
+    if(!isTokenMatch(token, user.resetPasswordToken))
         throw new ApiError(400, "Invalid Token")
 
     user.password = password
@@ -194,6 +194,40 @@ const deleteAvatar = asyncHandler (async(req, res)=>{
     return res.status(200).json(new ApiResponse(200, {avatar : user.avatar}, "Profile Picture Deleted"))
 })
 
+const getUserByPrefix = asyncHandler(async (req, res) => {
+    let { page, limit, query } = req.body
+    page = parseInt(page ?? 1)
+    page = page<=0 ? 1 : page
+    limit = parseInt(limit ?? 10)
+    limit = limit<=0 ? 10 : limit
+    const skip = (page - 1) * limit
+
+    const users = await User.aggregate([
+        {
+            $match: {
+              isEmailVerified: true,
+              $or: [
+                { username: { $regex: `^${query}`, $options: "i" } },
+                { email:    { $regex: `^${query}`, $options: "i" } },
+                { fullName: { $regex: `^${query}`, $options: "i" } }
+              ]
+            }
+        },
+        {
+            $project: {
+                username: 1,
+                fullName: 1,
+                email: 1,
+                avatar: 1
+            }
+        },
+        { $skip: skip },
+        { $limit: limit }
+    ]);
+
+    res.status(200).json(new ApiResponse(200, users, "Users fetched successfully"));
+});
+
 
 export {
     verifyEmail,
@@ -206,6 +240,7 @@ export {
     deleteAccount,
     deleteAvatar,
     me,
+    getUserByPrefix,
 }
 
 

@@ -10,6 +10,8 @@ import {
     projectDetails,
     deleteProject,
     allProjects,
+    acceptRequest,
+    rejectRequest,
 } from './project.controller.js'
 
 import {
@@ -19,8 +21,11 @@ import {
 } from '../../validators/index.js'
 import  {validate} from '../../middlewares/validator.middleware.js'
 
-import {verifyJWT, verifyProjectAdmin, verifyProjectMember, verifyAdmin} from '../../middlewares/authorize.js'
+import {verifyJWT, verifyProjectAdmin, verifyProjectMember, verifyAdmin, isUserVerified} from '../../middlewares/authorize.js'
+router.get('/accept/:projectMemberId-:token', acceptRequest)
+router.get('/reject/:projectMemberId-:token', rejectRequest)
 router.use(verifyJWT)
+router.use(isUserVerified)
 router.post('/create-new-project', createProjectValidator(), validate, createNewProject)
 router.get('/all-projects', allProjects)
 router.use(verifyProjectMember)

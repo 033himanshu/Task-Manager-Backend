@@ -8,7 +8,7 @@ const projectSchema = new mongoose.Schema({
     description: {
         type: String,
     },
-    board : {
+    boards : {
         type : [
             {
               type: Schema.Types.ObjectId,

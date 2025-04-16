@@ -10,13 +10,18 @@ export const UserRolesEnum = {
 export const AvailableUserRoles = Object.values(UserRolesEnum);
 
 
-// export const TaskStatusEnum = {
-//   TODO: "todo",
-//   IN_PROGRESS: "in_progress",
-//   DONE: "done",
-// };
+export const TaskStatusEnum = {
+  TODO: "todo",
+  IN_PROGRESS: "in_progress",
+  DONE: "done",
+};
+export const AvailableTaskStatuses = Object.values(TaskStatusEnum);
 
-// export const AvailableTaskStatuses = Object.values(TaskStatusEnum);
+export const ProjectMemberStatusEnum = {
+  PENDING : "pending",
+  ACCEPTED : "accepted"
+}
+export const AvailableProjectMemberStatus = Object.values(ProjectMemberStatusEnum)
 
 
 export const CloudinaryFolderEnum = {
