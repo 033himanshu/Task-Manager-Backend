@@ -9,6 +9,248 @@ import mongoose from "mongoose"
 import { deleteAllBoards, deleteAllNotes, deleteAllProjectMembers } from '../../utils/deletionHandling.js'
 import { Task } from '../../models/task.model.js'
 
+
+const getAllProjectsDetails = async (userId)=>{
+    try {
+        return await ProjectMember.aggregate([
+            {
+              $match:{
+                user: new mongoose.Types.ObjectId(userId)
+              }
+            },
+            {
+              $lookup:{
+                from: "projects",
+                localField: "project",
+                foreignField: "_id",
+                as: "project_details"
+              }
+            },
+            {
+              $unwind : "$project_details"
+            },
+                {
+              $lookup:{
+                from: "projectmembers",
+                localField: "project",
+                foreignField: "project",
+                as: "members"
+              },
+            },
+            {
+              $project : {
+                _id : "$project_details._id",
+                name : "$project_details.name",
+                description : "$project_details.description",
+                role : 1,
+                memberCnt :{ $size : "$members" }
+              }           
+            },
+          ])
+
+    } catch (error) {
+        throw new ApiError(501, `Error while get All Project Details, ${error}`)
+    }
+}
+
+const getAllDetailsOfProject = async (projectId) => {
+    try {
+        return await Project.aggregate([
+            {
+                $match : {_id : new mongoose.Types.ObjectId(projectId)}
+            },
+            {
+                $facet: {
+                    members :   [
+                        {
+                            $lookup : {
+                                from : "projectmembers",
+                                localField : "_id",
+                                foreignField : "project",
+                                as : "projectMembers"
+                            },
+                        },
+                        {
+                            $unwind : "$projectMembers"
+                        },
+                        {
+                            $project : {
+                                role : "$projectMembers.role",
+                                user : "$projectMembers.user",
+                                _id : 0
+                            }
+                        },
+                        {
+                            $lookup : {
+                                from : "users",
+                                localField : "user",
+                                foreignField : "_id",
+                                as : "userDetails"
+                            }
+                        },
+                        {
+                            $unwind : "$userDetails",
+                        },
+                        {
+                            $project : {
+                                  role : 1,
+                                _id : "$userDetails._id",
+                                  username: "$userDetails.username",
+                                  email : "$userDetails.email",
+                                  fullName: "$userDetails.username",
+                                  avatar : "$userDetails.avatar",
+                            }
+                        },
+                      ],
+                          notes :  [
+                        {
+                            // geting projectMEmbers
+                            $lookup : {
+                                from : "notes",
+                                localField : "_id",
+                                foreignField : "project",
+                                as : "notes"
+                            },
+                        },
+                        {
+                            $unwind : "$notes"
+                        },
+                        {
+                            $project : {
+                                content : "$notes.content",
+                                createdBy : "$notes.createdBy",
+                                _id : "$notes._id"
+                            }
+                        },
+                      ],
+                      board : [
+                        {
+                          $unwind : "$board"
+                        },
+                        {
+                           $lookup : {
+                              from : "boards",
+                              localField : "board",
+                              foreignField : "_id",
+                              as : "boardDetails"
+                            },
+                        },
+                        {
+                           $unwind : "$boardDetails"
+                        },
+                      {
+                        $lookup: {
+                          from: "tasks",
+                          localField: "boardDetails.tasks",
+                          foreignField: "_id",
+                          as: "tasks"
+                        }
+                      },
+                      {
+                        $unwind: {
+                          path: "$tasks",
+                          preserveNullAndEmptyArrays: true
+                        }
+                      },
+                      {
+                        $lookup: {
+                          from: "subtasks",
+                          localField: "tasks.subTasks",
+                          foreignField: "_id",
+                          as: "tasks.subTasks"
+                        }
+                      },
+                      {
+                        $group: {
+                          _id: "$_id",
+                          name: { $first: "$name" },
+                          description: { $first: "$description" },
+                          createdBy: { $first: "$createdBy" },
+                          tasks: {
+                            $push: {
+                              _id: "$tasks._id",
+                              title: "$tasks.title",
+                              description: "$tasks.description",
+                              assignedTo: "$tasks.assignedTo",
+                              assignedBy: "$tasks.assignedBy",
+                              attachments: "$tasks.attachments",
+                              subTasks: "$tasks.subTasks"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                },
+            },
+            {
+              $project: {
+                members: "$members",
+                notes: "$notes",
+                boards: "$board"
+              },
+              }
+        ])
+    } catch (error) {
+        throw new ApiError(501, `Error while get All Details of Project, ${error}`)
+    }
+}
+const getBoardsWithTaskDetails = async (projectId) => {
+    try {
+        return await Project.aggregate([
+            {
+                $match : {_id : new mongoose.Types.ObjectId(projectId)}
+            },
+            {
+                $lookup: {
+                  from: "boards",
+                  localField: "board",
+                  foreignField: "_id",
+                  as: "boards"
+                }
+              },
+              {
+                $unwind: "$boards"
+              },
+              {
+                $lookup: {
+                  from: "tasks",
+                  localField: "boards.tasks",
+                  foreignField: "_id",
+                  as: "boards.tasks"
+                }
+              },
+              {
+                $project: {
+                  _id: 1,
+                  boards: {
+                    _id: "$boards._id",
+                    name: "$boards.name",
+                    tasks: {
+                      $map: {
+                        input: "$boards.tasks",
+                        as: "task",
+                        in: {
+                          _id: "$$task._id",
+                          subTasks: "$$task.subTasks"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                $group: {
+                  _id: "$_id",
+                  boards: { $push: "$boards" }
+                }
+              }
+            ])
+    } catch (error) {
+        throw new ApiError(501, `Error while get All Details of Project, ${error}`)
+    }
+}
+
+
 const createNewProject = asyncHandler(async (req, res)=>{
     const {name, description} = req.body
     const createdBy = req._id
@@ -85,44 +327,26 @@ const removeMember = asyncHandler(async (req, res)=>{
 const projectDetails =asyncHandler(async (req, res)=>{
     const {projectId} = req.body
 
-    const projectMembers = await ProjectMember.aggregate([
-        {
-            $match : {project: new mongoose.Types.ObjectId(projectId)}
-        },
-        {
-            $lookup: {
-                from: "users",
-                localField: "user",
-                foreignField: "_id",
-                as: "userDetails",
-            }
-        },
-        {
-            $unwind : "$userDetails"
-        },
-        {
-            $project : {
-                fullName : "$userDetails.fullName",
-                email : "$userDetails.email",
-                avatar : "$userDetails.avatar",
-                role : 1,
-            }
-        }
-    ])
-    return res.status(200).json(new ApiResponse(200, {...(req.project.toObject()), projectMembers}, "Project Details Fetched"))
+    const projectDetails = await getAllDetailsOfProject(projectId)
+    return res.status(200).json(new ApiResponse(200, projectDetails, "Project Details Fetched"))
 })
 
 const deleteProject = asyncHandler(async (req, res)=>{
-    await deleteAllBoards()
-    await deleteAllNotes()
-    await deleteAllProjectMembers()
+    const projectId = req.body.projectId
+    const boardDetails = await getBoardsWithTaskDetails(projectId)
+    if(boardDetails.length!==0 && boardDetails[0]?.boards){
+        console.log(boardDetails[0].boards)
+        await deleteAllBoards(boardDetails[0].boards)
+    }
+    await deleteAllNotes(projectId)
+    await deleteAllProjectMembers(projectId)
     await req.project.deleteOne()
-    return res.status(501).json(501, {}, "Project Deleted")
+
+    return res.status(201).json(new ApiResponse(204, boardDetails[0].boards, "Project Deleted"))
 })
 
 const allProjects = asyncHandler(async (req, res)=>{
-    const createdBy  = req._id
-    const projects = await Project.find({})
+    const projects = await getAllProjectsDetails(req._id)
     return res.status(200).json(new ApiResponse(200, projects, "All Projects"))
 })
 

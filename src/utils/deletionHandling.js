@@ -4,11 +4,12 @@ import { Task } from "../models/task.model.js"
 import {CloudinaryFolderEnum} from "./constants.js"
 import { destroyFolderOnCloudinary } from "./cloudinary.js"
 import { ProjectMember } from "../models/projectMember.model.js"
+import { Board } from "../models/board.model.js"
 import {Note} from "../models/note.model.js"
 
 export const deleteAllSubTask = async (subTasks) => { 
     try{
-        await SubTask.deleteMany({_id : {$in: subTasks}})
+        await SubTask.deleteMany({_id : {$in: subTasks || []}})
     }catch(error){
         throw new ApiError(501, `Deletion Of Many Subtasks unsuccessfull,\n${error}`)
     }
@@ -26,6 +27,7 @@ export const deleteAllTasks = async (tasks) => {
                 console.log(folder)
                 await destroyFolderOnCloudinary(folder)
             } catch (error) {
+                // console.log(error)
                 throw new ApiError(501, `Folder deletion Failed on Cloudinary, ${error}`)
             }
             return await deleteAllSubTask(task.subTasks)
@@ -67,6 +69,7 @@ export const deleteAllProjectMembers = async (projectId) => {
     }catch(error){
         throw new ApiError(501, `Deletion Of Many Project Member unsuccessfull,\n${error}`)
     }
+    console.log("All Members deleted")
 
 }
 
@@ -76,10 +79,13 @@ export const deleteAllNotes = async  (projectId) => {
     }catch(error){
         throw new ApiError(501, `Deletion Of Many Project Member unsuccessfull,\n${error}`)
     }
+    console.log("All NOtes deleted")
 }
 
-// export const deleteAllProjects = async (projects) => {
+export const deleteAllProjects = async (projects) => {
+    
+}
 
-// }
+export const changeAssignedMemberToAdmin = async (task) =>{
 
-// export const changeAssignedMemberToAdmin = async (task)
+}

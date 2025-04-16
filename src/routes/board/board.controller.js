@@ -41,6 +41,7 @@ const findBoardWithName = async (projectId, name) => {
         throw new ApiError(501, `Something went wrong while searching for board with particular name`)
    }
 }
+
 const getBoardsAllTasksDetails = async (boardId) => {
     return await Board.aggregate([
         {

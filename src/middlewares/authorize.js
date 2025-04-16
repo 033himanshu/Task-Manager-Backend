@@ -90,7 +90,8 @@ export const verifySubTaskExist = asyncHandler ( async (req, res, next)=>{
 })
 
 export const verifyAssignedTaskMember = asyncHandler (async (req, res, next)=>{
-    if(req.role === UserRolesEnum.PROJECT_ADMIN || projectMember.role === UserRolesEnum.ADMIN || req.task.assignedTo === req._id) {
+    console.log(req.role)
+    if(req.role === UserRolesEnum.PROJECT_ADMIN || req.role === UserRolesEnum.ADMIN || req.task.assignedTo === req._id) {
         next()
     }
     else
