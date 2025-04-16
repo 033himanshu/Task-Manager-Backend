@@ -148,14 +148,14 @@ const createSubTask = asyncHandler (async (req, res)=>{
     const subTask = await SubTask.create({title, createdBy})
     req.task.subTasks.push(subTask._id)
     await req.task.save()
-    return res.status(201).json(new ApiResponse(201, {subTask}, "SubTask Created"))
+    return res.status(201).json(new ApiResponse(201, subTask.toObject(), "SubTask Created"))
 })
 const updateSubTask = asyncHandler(async (req, res)=>{
     const {title, isCompleted} = req.body
     req.subTask.title = title
     req.subTask.isCompleted = isCompleted
     await req.subTask.save()
-    return res.status(200).json(new ApiResponse(200, {}, "subTask Updated"))
+    return res.status(200).json(new ApiResponse(200, req.subTask.toObject(), "subTask Updated"))
 })
 const subTaskDetails = asyncHandler(async (req, res)=>{
     return res.status(200).json(new ApiResponse(200, req.subTask.toObject(), "SubTask Details"))
