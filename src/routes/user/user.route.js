@@ -7,7 +7,7 @@ import {
     updatePassword,
     forgotPassword,
     resetPassword,
-    deleteAccount,
+    // deleteAccount,
     deleteAvatar,
     me,
     getUserByPrefix,
@@ -36,7 +36,8 @@ router.post('/update-avatar', upload.single('avatar'), updateAvatar)
 router.post('/delete-avatar', deleteAvatar)
 router.post('/update-password', userUpdateCurrentPasswordValidator(), validate, updatePassword)
 router.post('/forgot-password', userForgotPasswordValidator(), validate, forgotPassword)
-router.post('/delete-account', deleteAccount)
+// router.post('/delete-account', deleteAccount) 
+// intensionaly removed delete account functionality, because didn't implementated a case that what happened to user's created projects
 router.get('/get-user-with-prefix', getUserByPrefix)
 
 export default router
