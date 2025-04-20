@@ -1,0 +1,1671 @@
+{
+	"info": {
+		"_postman_id": "0be23a5d-6664-4290-9a0a-039edb9ab0e9",
+		"name": "TaskManager API",
+		"description": "Complete API collection for TaskManager application with authentication, user management, projects, boards, tasks, subtasks and notes",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "16110894"
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseUrl}}/healthcheck",
+						"description": "Check if the API is up and running"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints to check API health status"
+		},
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Register User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"three@three.com\",\n    \"username\": \"three\",\n    \"password\": \"Three@three1\",\n    \"fullName\": \"three\"\n}"
+						},
+						"url": "{{baseUrl}}/auth/register",
+						"description": "Register a new user with email, username, password, and full name"
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// var jsonData = JSON.parse(responseBody);",
+									"// if (jsonData.data && jsonData.data.accessToken) {",
+									"//     pm.environment.set(\"accessToken\", jsonData.data.accessToken);",
+									"// }",
+									"// if (jsonData.data && jsonData.data.refreshToken) {",
+									"//     pm.environment.set(\"refreshToken\", jsonData.data.refreshToken);",
+									"// }"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "// {\n//     \"username\": \"one\",\n//     \"password\": \"one@One1\"\n// }\n{\n    \"username\": \"two\",\n    \"password\": \"Two@two1\"\n}\n// {\n//     \"username\": \"three\",\n//     \"password\": \"Three@three1\"\n// }"
+						},
+						"url": "{{baseUrl}}/auth/login",
+						"description": "Login with email/username and password to get access and refresh tokens"
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Access Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// var jsonData = JSON.parse(responseBody);",
+									"// if (jsonData.data && jsonData.data.accessToken) {",
+									"//     pm.environment.set(\"accessToken\", jsonData.data.accessToken);",
+									"// }"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{baseUrl}}/auth/refresh-access-token",
+						"description": "Get a new access token using a valid refresh token"
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/auth/logout",
+						"description": "Logout and invalidate the current session's tokens (protected route)"
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication related endpoints"
+		},
+		{
+			"name": "User Management",
+			"item": [
+				{
+					"name": "Verify Email",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/user/verify/:email-:token",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user",
+								"verify",
+								":email-:token"
+							],
+							"variable": [
+								{
+									"key": "email-:token",
+									"value": "one@one.com-73d0bcf887e14b07c71c191b51af91de3e659d0e"
+								}
+							]
+						},
+						"description": "Verify user email address with the provided token"
+					},
+					"response": []
+				},
+				{
+					"name": "Resend Email Verification",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/user/resend-email",
+						"description": "Resend email verification link to the user's email (protected route)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current User",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/user/me",
+						"description": "Get current logged-in user's profile information (protected route)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Profile",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"one@one1.com\",\n    \"username\": \"one\",\n    \"fullName\": \"one\"\n}"
+						},
+						"url": "{{baseUrl}}/user/update-profile",
+						"description": "Update user's profile information (protected route)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Avatar",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "avatar",
+									"type": "file",
+									"src": "/C:/Users/PC/Desktop/GenAi/Capture.PNG"
+								}
+							]
+						},
+						"url": "{{baseUrl}}/user/update-avatar",
+						"description": "Upload and update user's profile avatar (protected route)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Avatar",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": "{{baseUrl}}/user/delete-avatar",
+						"description": "Remove user's profile avatar (protected route)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"oldPassword\": \"One@one1\",\n    \"password\": \"one@One1\"\n}"
+						},
+						"url": "{{baseUrl}}/user/update-password",
+						"description": "Update user's password (protected route)"
+					},
+					"response": []
+				},
+				{
+					"name": "Forgot Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"one@one.com\"\n}"
+						},
+						"url": "{{baseUrl}}/user/forgot-password",
+						"description": "Request password reset link when password is forgotten"
+					},
+					"response": []
+				},
+				{
+					"name": "Reset Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"password\": \"one@One1\"\n}"
+						},
+						"url": "http://localhost:3000/api/v1/user/reset-password/one@one.com-20e268f2b8db48d313694e7780241788e7cfda5a",
+						"description": "Reset password using email and reset token"
+					},
+					"response": []
+				},
+				{
+					"name": "Get User With Prefix",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"page\" : -4,\r\n    \"limit\" : 1,\r\n    \"query\": \"t\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseUrl}}/user/get-user-with-prefix"
+					},
+					"response": []
+				}
+			],
+			"description": "User profile and account management"
+		},
+		{
+			"name": "Project Management",
+			"item": [
+				{
+					"name": "Create New Project",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Project3\",\n    \"description\": \"This is a new project description\"\n}"
+						},
+						"url": "{{baseUrl}}/project/create-new-project",
+						"description": "Create a new project (protected route)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Projects",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseUrl}}/project/all-projects",
+						"description": "Get all projects the user has access to (protected route)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Project Details",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"projectId\" : \"67ff8e179ccda125559db411\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/project/project-details",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"project",
+								"project-details"
+							],
+							"query": [
+								{
+									"key": "",
+									"value": "project-id-here",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get details of a specific project (protected, requires project member role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Project Details",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"projectId\" : \"67fbe7a8816271a1e3c5f4db\",\n    \"name\": \"Project1\"\n}"
+						},
+						"url": "{{baseUrl}}/project/update-project-details",
+						"description": "Update a project's details (protected, requires project admin role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Add Member to Project",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"projectId\": \"67ff8e179ccda125559db411\",\n    \"email\": \"one@one.com\",\n    \"role\": \"member\"\n}"
+						},
+						"url": "{{baseUrl}}/project/add-member-to-project",
+						"description": "Add a new member to the project (protected, requires project admin role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Member Role",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"projectId\" : \"67fbe7a8816271a1e3c5f4db\",\n    \"userId\": \"67fbf2707596beb572a403b6\",\n    \"role\": \"admin\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/project/update-member-role",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"project",
+								"update-member-role"
+							],
+							"query": [
+								{
+									"key": "projectId",
+									"value": "project-id-here",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Update a project member's role (protected, requires project admin role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Member",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"userId\": \"67fbbb26b99a8c17db6a5e94\",\r\n    \"projectId\": \"67fbe7a8816271a1e3c5f4db\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/project/remove-member",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"project",
+								"remove-member"
+							],
+							"query": [
+								{
+									"key": "projectId",
+									"value": "project-id-here",
+									"disabled": true
+								},
+								{
+									"key": "userId",
+									"value": "user-id-here",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Remove a member from the project (protected, requires project admin role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Project",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"projectId\" : \"67ff8e179ccda125559db411\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/project/delete-project",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"project",
+								"delete-project"
+							],
+							"query": [
+								{
+									"key": "projectId",
+									"value": "project-id-here",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Delete a project (protected, requires project admin role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Leave Project",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": "{{baseUrl}}/project/leave-project"
+					},
+					"response": []
+				}
+			],
+			"description": "Project creation, management and member handling"
+		},
+		{
+			"name": "Board Management",
+			"item": [
+				{
+					"name": "Add Board",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"projectId\" : \"67fbed5a987e62c05bbb8325\",\n    \"name\": \"Board2\",\n    \"description\": \"This is a new board description\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/board/add-board",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"board",
+								"add-board"
+							],
+							"query": [
+								{
+									"key": "projectId",
+									"value": "project-id-here",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Create a new board in a project (protected, requires project admin role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Board Details",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"projectId\" : \"67fbe7a8816271a1e3c5f4db\",\r\n    \"boardId\" : \"67fc2b47038f6bbb6e6b1383\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/board/get-board",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"board",
+								"get-board"
+							],
+							"query": [
+								{
+									"key": "boardId",
+									"value": "board-id-here",
+									"disabled": true
+								},
+								{
+									"key": "projectId",
+									"value": "project-id-here",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get details of a specific board (protected, requires project member role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Board Position",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"newIndex\": 1,\n    \"projectId\" : \"67fbe7a8816271a1e3c5f4db\",\n    \"boardId\" : \"67fc2ae2038f6bbb6e6b137a\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/board/update-board-position",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"board",
+								"update-board-position"
+							],
+							"query": [
+								{
+									"key": "boardId",
+									"value": "board-id-here",
+									"disabled": true
+								},
+								{
+									"key": "projectId",
+									"value": "project-id-here",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Update a board's position (protected, requires project admin role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Board",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"projectId\" : \"67fbe7a8816271a1e3c5f4db\",   \r\n    \"boardId\" : \"67fd9a6286743d32787a9c74\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/board/delete-board",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"board",
+								"delete-board"
+							],
+							"query": [
+								{
+									"key": "boardId",
+									"value": "board-id-here",
+									"disabled": true
+								},
+								{
+									"key": "projectId",
+									"value": "project-id-here",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Delete a board (protected, requires project admin role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Board Details",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"projectId\" : \"67fbe7a8816271a1e3c5f4db\",\n    \"boardId\" : \"67fc23c2a4447a5d1d10d09c\",\n    \"name\": \"Board2\",\n    \"description\": \"Updated board description\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/board/update-board-details",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"board",
+								"update-board-details"
+							],
+							"query": [
+								{
+									"key": "boardId",
+									"value": "board-id-here",
+									"disabled": true
+								},
+								{
+									"key": "projectId",
+									"value": "project-id-here",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Update a board's details (protected, requires project admin role)"
+					},
+					"response": []
+				}
+			],
+			"description": "Board creation and management"
+		},
+		{
+			"name": "Task Management",
+			"item": [
+				{
+					"name": "Create Task",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Task1\",\n    \"description\": \"This is a new task description\",\n    \"assignedTo\": \"67fbbb26b99a8c17db6a5e94\",\n    \"boardId\": \"67feefd17c98bb4587a9d6d9\",\n    \"projectId\" : \"67fbed5a987e62c05bbb8325\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/task/create-task",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"task",
+								"create-task"
+							],
+							"query": [
+								{
+									"key": "projectId",
+									"value": "project-id-here",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Create a new task (protected, requires project admin role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Task",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Task3\",\n    \"description\": \"This is a new task description\",\n    \"boardId\": \"67fc2b47038f6bbb6e6b1383\",\n    \"projectId\" : \"67fbe7a8816271a1e3c5f4db\",\n    \"taskId\" : \"67fc3d681dd710258820fd2c\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/task/update-task",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"task",
+								"update-task"
+							],
+							"query": [
+								{
+									"key": "taskId",
+									"value": "task-id-here",
+									"disabled": true
+								},
+								{
+									"key": "projectId",
+									"value": "project-id-here",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Update a task's details (protected, requires project admin role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Task Details",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"boardId\": \"67fc2ae2038f6bbb6e6b137a\",\r\n    \"projectId\" : \"67fbe7a8816271a1e3c5f4db\",\r\n    \"taskId\" : \"67fc3cb285bc9ed30677b09f\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/task/task-details",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"task",
+								"task-details"
+							],
+							"query": [
+								{
+									"key": "taskId",
+									"value": "task-id-here",
+									"disabled": true
+								},
+								{
+									"key": "projectId",
+									"value": "project-id-here",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get details of a specific task (protected, requires project member role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Add Attachments",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "files",
+									"type": "file",
+									"src": "/C:/Users/PC/Desktop/GenAi/Capture.PNG"
+								},
+								{
+									"key": "files",
+									"type": "file",
+									"src": "/C:/Users/PC/Desktop/Your Impact Card.jpg"
+								},
+								{
+									"key": "taskId",
+									"value": "67fef0317c98bb4587a9d6e7",
+									"type": "text"
+								},
+								{
+									"key": "boardId",
+									"value": "67feefd17c98bb4587a9d6d9",
+									"type": "text"
+								},
+								{
+									"key": "projectId",
+									"value": "67fbed5a987e62c05bbb8325",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/task/add-attachments",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"task",
+								"add-attachments"
+							],
+							"query": [
+								{
+									"key": "taskId",
+									"value": "task-id-here",
+									"disabled": true
+								},
+								{
+									"key": "projectId",
+									"value": "project-id-here",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Add file attachments to a task (protected, requires project member role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Attachment",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"attachmentId\": \"67fc594e33aa92da7c7301df\",\n    \"boardId\": \"67fc2ae2038f6bbb6e6b137a\",\n    \"projectId\" : \"67fbe7a8816271a1e3c5f4db\",\n    \"taskId\" : \"67fc3cb285bc9ed30677b09f\"\n\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/task/delete-attachment",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"task",
+								"delete-attachment"
+							],
+							"query": [
+								{
+									"key": "taskId",
+									"value": "task-id-here",
+									"disabled": true
+								},
+								{
+									"key": "projectId",
+									"value": "project-id-here",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Delete an attachment from a task (protected, requires project member role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Assigned Member",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"boardId\": \"67fc2ae2038f6bbb6e6b137a\",\n    \"projectId\" : \"67fbe7a8816271a1e3c5f4db\",\n    \"taskId\" : \"67fc3cb285bc9ed30677b09f\",\n    \"assignedTo\": \"67fbbb26b99a8c17db6a5e94\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/task/update-assigned-member",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"task",
+								"update-assigned-member"
+							],
+							"query": [
+								{
+									"key": "taskId",
+									"value": "task-id-here",
+									"disabled": true
+								},
+								{
+									"key": "projectId",
+									"value": "project-id-here",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Update the member assigned to a task (protected, requires project admin role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Change Board and Position",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"newBoardId\": \"67fc2ae2038f6bbb6e6b137a\",\n    \"boardId\": \"67fc2b47038f6bbb6e6b1383\",\n    \"projectId\" : \"67fbe7a8816271a1e3c5f4db\",\n    \"taskId\" : \"67fc3cb285bc9ed30677b09f\",\n    \"newIndex\": 0\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/task/change-board-and-position",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"task",
+								"change-board-and-position"
+							],
+							"query": [
+								{
+									"key": "taskId",
+									"value": "task-id-here",
+									"disabled": true
+								},
+								{
+									"key": "projectId",
+									"value": "project-id-here",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Move a task to a different board and/or change its position (protected, requires project admin role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Task",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"boardId\": \"67fd9a6286743d32787a9c74\",\r\n    \"projectId\" : \"67fbe7a8816271a1e3c5f4db\",\r\n    \"taskId\" : \"67fd9a8186743d32787a9c7b\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/task/delete-task",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"task",
+								"delete-task"
+							],
+							"query": [
+								{
+									"key": "taskId",
+									"value": "task-id-here",
+									"disabled": true
+								},
+								{
+									"key": "projectId",
+									"value": "project-id-here",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Delete a task (protected, requires project admin role)"
+					},
+					"response": []
+				}
+			],
+			"description": "Task creation and management"
+		},
+		{
+			"name": "Subtask Management",
+			"item": [
+				{
+					"name": "Create Subtask",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Subtask3\",\n    \"boardId\": \"67fe97e2aa42bad3c829cf0b\",\n    \"projectId\" : \"67fbe7a8816271a1e3c5f4db\",\n    \"taskId\" : \"67fe983faa42bad3c829cf12\"\n}"
+						},
+						"url": "{{baseUrl}}/task/create-subtask",
+						"description": "Create a new subtask for a task (protected, requires assigned task member role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Subtask Details",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"subTaskId\" : \"67fd1621419ee53429dff919\",\r\n    \"boardId\": \"67fc2ae2038f6bbb6e6b137a\",\r\n    \"projectId\" : \"67fbe7a8816271a1e3c5f4db\",\r\n    \"taskId\" : \"67fc3cb285bc9ed30677b09f\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/task/subtask-details",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"task",
+								"subtask-details"
+							],
+							"query": [
+								{
+									"key": "subtaskId",
+									"value": "subtask-id-here",
+									"disabled": true
+								},
+								{
+									"key": "taskId",
+									"value": "task-id-here",
+									"disabled": true
+								},
+								{
+									"key": "projectId",
+									"value": "project-id-here",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get details of a specific subtask (protected, requires project member role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Subtask",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"ABC\",\n    \"isCompleted\" : true,\n    \"subTaskId\" : \"67fd1621419ee53429dff919\",\n    \"boardId\": \"67fc2ae2038f6bbb6e6b137a\",\n    \"projectId\" : \"67fbe7a8816271a1e3c5f4db\",\n    \"taskId\" : \"67fc3cb285bc9ed30677b09f\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/task/update-subtask",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"task",
+								"update-subtask"
+							],
+							"query": [
+								{
+									"key": "subtaskId",
+									"value": "subtask-id-here",
+									"disabled": true
+								},
+								{
+									"key": "taskId",
+									"value": "task-id-here",
+									"disabled": true
+								},
+								{
+									"key": "projectId",
+									"value": "project-id-here",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Update a subtask's details (protected, requires assigned task member role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Subtask Position",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"newIndex\": 2,\n    \"subTaskId\" : \"67fd1621419ee53429dff919\",\n    \"boardId\": \"67fc2ae2038f6bbb6e6b137a\",\n    \"projectId\" : \"67fbe7a8816271a1e3c5f4db\",\n    \"taskId\" : \"67fc3cb285bc9ed30677b09f\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/task/update-subtask-position",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"task",
+								"update-subtask-position"
+							],
+							"query": [
+								{
+									"key": "subtaskId",
+									"value": "subtask-id-here",
+									"disabled": true
+								},
+								{
+									"key": "taskId",
+									"value": "task-id-here",
+									"disabled": true
+								},
+								{
+									"key": "projectId",
+									"value": "project-id-here",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Update a subtask's position within its parent task (protected, requires assigned task member role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Subtask",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"subTaskId\" : \"67fd186ede067568f6aa7bc4\",\r\n    \"boardId\": \"67fc2ae2038f6bbb6e6b137a\",\r\n    \"projectId\" : \"67fbe7a8816271a1e3c5f4db\",\r\n    \"taskId\" : \"67fc3cb285bc9ed30677b09f\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/task/delete-subtask",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"task",
+								"delete-subtask"
+							],
+							"query": [
+								{
+									"key": "subtaskId",
+									"value": "subtask-id-here",
+									"disabled": true
+								},
+								{
+									"key": "taskId",
+									"value": "task-id-here",
+									"disabled": true
+								},
+								{
+									"key": "projectId",
+									"value": "project-id-here",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Delete a subtask (protected, requires assigned task member role)"
+					},
+					"response": []
+				}
+			],
+			"description": "Subtask creation and management"
+		},
+		{
+			"name": "Notes",
+			"item": [
+				{
+					"name": "Get Notes",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"noteId\" : \"67fd33856d3bbe520827d3cf\",\r\n    \"projectId\" : \"67fbe7a8816271a1e3c5f4db\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/note/get-notes",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"note",
+								"get-notes"
+							],
+							"query": [
+								{
+									"key": "projectId",
+									"value": "project-id-here",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get all notes for a project (protected, requires project member role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Add Note",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"projectId\" : \"67fbe7a8816271a1e3c5f4db\",\n    \"content\": \"Note 2\"\n\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/note/add-note",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"note",
+								"add-note"
+							],
+							"query": [
+								{
+									"key": "projectId",
+									"value": "project-id-here",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Add a new note to a project (protected, requires project admin role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Note",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"noteId\" : \"67fd33856d3bbe520827d3cf\",\n    \"projectId\" : \"67fbe7a8816271a1e3c5f4db\",\n    \"content\": \"This is a updated note for the project\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/note/update-note",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"note",
+								"update-note"
+							],
+							"query": [
+								{
+									"key": "noteId",
+									"value": "note-id-here",
+									"disabled": true
+								},
+								{
+									"key": "projectId",
+									"value": "project-id-here",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Update an existing note (protected, requires project admin role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Note",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"noteId\" : \"67fd33856d3bbe520827d3cf\",\r\n    \"projectId\" : \"67fbe7a8816271a1e3c5f4db\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/note/delete-note",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"note",
+								"delete-note"
+							],
+							"query": [
+								{
+									"key": "noteId",
+									"value": "note-id-here",
+									"disabled": true
+								},
+								{
+									"key": "projectId",
+									"value": "project-id-here",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Delete a note from a project (protected, requires project admin role)"
+					},
+					"response": []
+				}
+			],
+			"description": "Project notes management"
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8000/api/v1",
+			"type": "string"
+		}
+	]
+}

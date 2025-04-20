@@ -1,6 +1,7 @@
 import express, { urlencoded } from 'express'
 import cookieParser from 'cookie-parser'
 import dotenv from 'dotenv'
+import cors from 'cors'
 dotenv.config({
     path : './.env'
 })
@@ -13,6 +14,22 @@ import boardRouter from './routes/board/board.route.js'
 import noteRouter from './routes/note/note.route.js'
 
 const app = express()
+
+const allowedOrigins = (process.env.ALLOWED_ORIGINS)?.split(',').map(or => or.trim())
+console.log(allowedOrigins)
+
+app.use(cors({
+    origin: function (origin, callback) {
+        // allow requests with no origin (like mobile apps or curl)
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error("Not allowed by CORS"));
+        }
+    },
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    credentials: true,
+}))
 
 app.use(express.json())
 app.use(express.urlencoded({extended: true}))
@@ -44,5 +61,9 @@ app.use(`${baseUrl}note`, noteRouter)
 app.use(`${baseUrl}project`, projectRouter)
 app.use(`${baseUrl}task`, taskRouter)
 app.use(`${baseUrl}user`, userRouter)
+
+app.use((err, req, res, next)=> {
+    return res.status(err.statusCode).json({data : {message:err.message, success : false, status : err.statusCode}})
+})
 
 export default app

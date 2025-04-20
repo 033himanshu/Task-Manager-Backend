@@ -27,7 +27,6 @@ const generateAccessAndRefreshToken = async (userId)=>{
 
 const register = asyncHandler(async (req, res)=>{
     let {email, fullName, username, password } = req.body
-
     // check whether email Already exists in db
     const existingUser = await User.aggregate([
         {
@@ -42,8 +41,19 @@ const register = asyncHandler(async (req, res)=>{
 
     //create user
     let user = await User.create({email, fullName, username, password })
+
+    const {accessToken, refreshToken} = await generateAccessAndRefreshToken(user._id)
+    res.cookie("accessToken", accessToken, cookieOptions).cookie("refreshToken", refreshToken, cookieOptions)
+    user  = {
+        _id : user._id,
+        username : user.username,
+        fullName :  user.fullName,
+        email : user.email,
+        avatar : user.avatar,
+        isEmailVerified:  user.isEmailVerified,
+    }
     //send success
-    return res.status(201).json(new ApiResponse(201, {id: user._id}, "User Registered Successfully"))
+    return res.status(201).json(new ApiResponse(201, {user, accessToken, refreshToken}, "User Registered Successfully"))
 })
 
 const login = asyncHandler(async (req, res)=>{
@@ -54,14 +64,21 @@ const login = asyncHandler(async (req, res)=>{
         throw new ApiError(400, '(username or email) and password are required')
 
     // finding user
-    const user = await User.findOne({$or : [{email}, {username}]})
+    let user = await User.findOne({$or : [{email}, {username}]})
     if(!user || !(await user.isPasswordCorrect(password)))
         throw new ApiError(404, "Wrong Credentials")
 
     const {accessToken, refreshToken} = await generateAccessAndRefreshToken(user._id)
-
+    user  = {
+        _id : user._id,
+        username : user.username,
+        fullName :  user.fullName,
+        email : user.email,
+        avatar : user.avatar,
+        isEmailVerified:  user.isEmailVerified,
+    }
     res.cookie("accessToken", accessToken, cookieOptions).cookie("refreshToken", refreshToken, cookieOptions)
-    return res.status(200).json(new ApiResponse(200, {id:user._id, accessToken, refreshToken}, "Login Successfull"))
+    return res.status(200).json(new ApiResponse(200, {user, accessToken, refreshToken}, "Login Successfull"))
 })
 
 const logout = asyncHandler(async (req, res)=>{

@@ -15,6 +15,7 @@ const router = express.Router()
 import { verifyJWT } from "../../middlewares/authorize.js"
 
 router.post('/register', userRegisterValidator(), validate, register)
+
 router.post('/login', userLoginValidator(), validate, login)
 router.post('/refresh-access-token', refreshAccessToken)
 //secured routes

@@ -34,6 +34,7 @@ const verifyEmail = asyncHandler(async (req, res) =>{
 })
 
 const me = asyncHandler(async (req, res)=>{
+    console.log("Fetched")
     const user = await User.findById(req._id)
     if(!user)
         throw new ApiError(422, "User not exists")
@@ -87,7 +88,14 @@ const updateProfile = asyncHandler (async (req, res)=>{
     user.fullName = fullName
     user.username = username
     await user.save()
-    return res.status(200).json( new ApiResponse(200, {}, "User Profile Updated"))
+    return res.status(200).json( new ApiResponse(200, {user  : {
+        _id : user._id,
+        username : user.username,
+        fullName :  user.fullName,
+        email : user.email,
+        avatar : user.avatar,
+        isEmailVerified:  user.isEmailVerified,
+    }}, "User Profile Updated"))
 })
 
 const updatePassword = asyncHandler (async (req, res)=>{
