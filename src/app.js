@@ -36,6 +36,7 @@ app.use(express.urlencoded({extended: true}))
 app.use(cookieParser())
 
 app.use((req,res,next)=>{
+    console.log("Request come")
     if(req.body && typeof req.body === 'object'){
         for(const key in req.body){
             if(typeof req.body[key] === 'string'){
@@ -63,7 +64,7 @@ app.use(`${baseUrl}task`, taskRouter)
 app.use(`${baseUrl}user`, userRouter)
 
 app.use((err, req, res, next)=> {
-    return res.status(err.statusCode).json({data : {message:err.message, success : false, status : err.statusCode}})
+    return res.status(typeof(err.statusCode)===Number ? err.statusCode : 501).json({data : {message:err.message, success : false, status : err.statusCode}})
 })
 
 export default app

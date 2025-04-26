@@ -23,7 +23,7 @@ router.use(verifyProjectMember)
 router.post('/add-board', verifyProjectAdmin, boardValidator(), validate, addBoard)
 //verify board exists
 router.use(verifyBoardExist)
-router.get('/get-board', boardDetails)
+router.post('/get-board', boardDetails)
 router.use(verifyProjectAdmin)
 router.patch('/update-board-position', updateBoardPosition)
 router.delete('/delete-board', deleteBoard)

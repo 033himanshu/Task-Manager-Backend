@@ -94,7 +94,7 @@ userSchema.methods.sendResetPasswordToken = async function(){
     await sendMail({
         options : resetPasswordMainGenContent(
             this.username, 
-            `http://localhost:${port}${base_url}user/reset-password/${this.email}-${unHashedToken}`
+            `http://localhost:5173/auth/reset-password/${this.email}-${unHashedToken}`
         ),
         email : this.email,
         subject : 'Reset Password Verification mail'

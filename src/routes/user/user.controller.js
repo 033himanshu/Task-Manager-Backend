@@ -60,7 +60,14 @@ const resendEmailVerification = asyncHandler(async (req, res)=>{
     user.emailVerificationExpiry = undefined
     user.markModified("email")
     user.save()
-    return res.status(200).json(new ApiResponse(200, {}, "Email Re-Registered"))
+    return res.status(200).json(new ApiResponse(200, {user: {
+        _id : user._id,
+        avatar : user.avatar,
+        username: user.username,
+        fullName:user.fullName,
+        email : user.email,
+        isEmailVerified:  user.isEmailVerified,
+    }}, "Email Re-Registered"))
 })
 
 const updateProfile = asyncHandler (async (req, res)=>{
@@ -100,6 +107,7 @@ const updateProfile = asyncHandler (async (req, res)=>{
 
 const updatePassword = asyncHandler (async (req, res)=>{
     let {oldPassword, password} = req.body
+    console.log({oldPassword, password})
     const user = await User.findById(req._id)
     if(!await user.isPasswordCorrect(oldPassword))
         throw new ApiError(400, "Current Password is Wrong")
@@ -120,8 +128,7 @@ const forgotPassword = asyncHandler (async (req, res)=>{
 })
 
 const resetPassword = asyncHandler (async (req, res)=>{
-    const {email, token } = req.params
-    const {password} = req.body
+    const {password, email, token} = req.body
     const user = await User.findOne({email})
     if(!user)
         throw new ApiError(400, "Invalid Attempt")

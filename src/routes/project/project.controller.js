@@ -47,6 +47,7 @@ const getAllProjectsDetails = async (userId)=>{
                 name : "$project_details.name",
                 description : "$project_details.description",
                 role : 1,
+                createdAt: 1,
                 memberCnt :{ $size : "$members" }
               }           
             },
@@ -65,6 +66,17 @@ const getAllDetailsOfProject = async (projectId) => {
       },
       {
         $facet: {
+          projectDetails : [
+            {
+              $match: { _id: new mongoose.Types.ObjectId(projectId) }
+            },
+            {
+              $project : {
+                name : 1,
+                description: 1,
+              },
+            }
+          ],
           members: [
             {
               $lookup: {
@@ -170,9 +182,11 @@ const getAllDetailsOfProject = async (projectId) => {
       },
       {
         $project: {
+          name: { $first: "$projectDetails.name" },
+          description: {$first : "$projectDetails.description"},
           members: "$members",
           notes: "$notes",
-          boards: "$boardDetails"  
+          boards: "$boardDetails",
         }
       }
     ]);
@@ -190,7 +204,7 @@ const getBoardsWithTaskDetails = async (projectId) => {
             {
                 $lookup: {
                   from: "boards",
-                  localField: "board",
+                  localField: "boards",
                   foreignField: "_id",
                   as: "boards"
                 }
@@ -257,6 +271,7 @@ const createNewProject = asyncHandler(async (req, res)=>{
 })
 
 const updateProjectDetails = asyncHandler(async (req, res)=>{
+  console.log("Updating project details")
     const {name, description} = req.body
     const createdBy = req._id
     if(req.project.name !== name){
@@ -268,6 +283,7 @@ const updateProjectDetails = asyncHandler(async (req, res)=>{
     req.project.name = name
     req.project.description = description
     await req.project.save()
+    console.log(req.project.toObject())
     return res.status(200).json(new ApiResponse(200, req.project.toObject(), "Project Details updated"))
 })
 
@@ -383,15 +399,17 @@ const removeMember = asyncHandler(async (req, res)=>{
 })
 
 const projectDetails =asyncHandler(async (req, res)=>{
-    const {projectId} = req.body
+    // const {projectId} = req.body
 
-    const projectDetails = await getAllDetailsOfProject(projectId)
-    return res.status(200).json(new ApiResponse(200, projectDetails, "Project Details Fetched"))
+    // const projectDetails = await getAllDetailsOfProject(projectId)
+    // return res.status(200).json(new ApiResponse(200, projectDetails[0], "Project Details Fetched"))
+    return res.status(200).json(new ApiResponse(200, req.project.toObject(), "Project Details Fetched"))
 })
 
 const deleteProject = asyncHandler(async (req, res)=>{
     const projectId = req.body.projectId
     const boardDetails = await getBoardsWithTaskDetails(projectId)
+    console.log('board Details: ',boardDetails) 
     if(boardDetails.length!==0 && boardDetails[0]?.boards){
         console.log(boardDetails[0].boards)
         await deleteAllBoards(boardDetails[0].boards)
@@ -400,12 +418,13 @@ const deleteProject = asyncHandler(async (req, res)=>{
     await deleteAllProjectMembers(projectId)
     await req.project.deleteOne()
 
-    return res.status(201).json(new ApiResponse(204, boardDetails[0].boards, "Project Deleted"))
+    return res.status(201).json(new ApiResponse(204,{}, "Project Deleted"))
 })
 
 const allProjects = asyncHandler(async (req, res)=>{
     const projects = await getAllProjectsDetails(req._id)
-    return res.status(200).json(new ApiResponse(200, projects, "All Projects"))
+    console.log(projects)
+    return res.status(200).json(new ApiResponse(200, {projects}, "All Projects"))
 })
 
 export {

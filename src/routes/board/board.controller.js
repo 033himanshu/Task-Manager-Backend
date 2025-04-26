@@ -86,7 +86,7 @@ const addBoard = asyncHandler(async (req, res)=>{
     const board = await Board.create({name, description, createdBy})
     req.project.boards.push(board._id)
     await req.project.save()
-    return res.status(201).json(new ApiResponse(201, board.toObject(), "New Board Created"))
+    return res.status(201).json(new ApiResponse(201, req.project.toObject(), "New Board Created"))
 })
 
 
@@ -108,12 +108,12 @@ const updateBoardDetails = asyncHandler(async (req, res)=>{
 const updateBoardPosition = asyncHandler(async (req, res) => {
     const { boardId, newIndex } = req.body;
     const castedBoardId = new mongoose.Types.ObjectId(boardId);
-    let boardArray = req.project.board;
+    let boardArray = req.project.boards;
 
     if (newIndex < 0 || newIndex >= boardArray.length)
         throw new ApiError(400, "Invalid Index");
 
-    const currentIndex = boardArray.findIndex(bId => castedBoardId.equals(bId));
+    const currentIndex = boardArray.findIndex(Id => castedBoardId.equals(bId));
 
     if (currentIndex === newIndex)
         return res.status(200).json(new ApiResponse(200, {}, "Board already at desired position"));
@@ -123,7 +123,7 @@ const updateBoardPosition = asyncHandler(async (req, res) => {
 
     await req.project.save();
 
-    return res.status(200).json(new ApiResponse(200, {}, "Board Position Updated"));
+    return res.status(200).json(new ApiResponse(200, req.project.toObject(), "Board Position Updated"));
 })
 
 

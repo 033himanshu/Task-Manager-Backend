@@ -8,6 +8,7 @@ import { ProjectMemberStatusEnum, UserRolesEnum } from "../utils/constants.js"
 import { Task } from "../models/task.model.js"
 import { SubTask } from "../models/subTask.model.js"
 import mongoose from "mongoose"
+import { User } from "../models/user.model.js"
 
 export const verifyJWT = asyncHandler(async (req, res, next) => {
     const token = req.cookies?.accessToken || req?.headers?.authorization?.split(' ')[1]
@@ -99,10 +100,11 @@ export const verifyAssignedTaskMember = asyncHandler (async (req, res, next)=>{
 })
 
 export const isUserVerified = asyncHandler (async (req, res, next)=>{
-    let user= undefined
-    try{
-        user = await isUserExist(req._id)
-    }catch(error){
-        throw error
-    }
+    const user = await User.findById(req._id)
+    if(!user)
+        throw new ApiError(404, "User not found")
+    if(user.isEmailVerified)
+        next()
+    else
+        throw new ApiError(403, "User not verified")
 })
