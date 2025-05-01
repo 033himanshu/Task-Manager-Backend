@@ -82,7 +82,7 @@ const boardValidator = () =>{
 
 const addMemberToProjectValidator = () => {
   return [
-    emailValidation,
+    body("userId").notEmpty().withMessage("userId is required"),
     roleValidator,
   ];
 };

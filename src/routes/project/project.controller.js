@@ -292,22 +292,22 @@ const addMemberToProject = asyncHandler(async (req,res)=>{
     const {userId, projectId, role} = req.body
 
     let user = undefined
+    console.log({userId, projectId, role})
     try{
       user = await isUserExist(userId)
     }catch(error){
       throw error
     }
-
-    let projectMember = await ProjectMember.findOne({user:user._id, project: projectId})
-    if(projectMember.status === ProjectMemberStatusEnum.ACCEPTED)
+    let projectMember = await ProjectMember.findOne({user:userId, project: projectId})
+    if(projectMember?.status === ProjectMemberStatusEnum.ACCEPTED)
         throw new ApiError(409, `Member Already exist in Project`)
-    else if(projectMember.status === ProjectMemberStatusEnum.PENDING){
+    else if(projectMember?.status === ProjectMemberStatusEnum.PENDING){
         if(projectMember.tokenExpiry < Date.now())
             await projectMember.deleteOne()
         throw new ApiError(409, `Already Requested, Request is Pending`)
     }
     console.log(req.project.name, user)
-    projectMember = await ProjectMember.create({user: user._id, project: projectId, role })
+    projectMember = await ProjectMember.create({user: userId, project: projectId, role })
     await projectMember.SendJoinProjectRequestMail(req.project.name, user)
     return res.status(201).json(new ApiResponse(201, projectMember.toObject(), "Member Added in Project"))
 })
@@ -399,13 +399,60 @@ const removeMember = asyncHandler(async (req, res)=>{
 })
 
 const projectDetails =asyncHandler(async (req, res)=>{
-    // const {projectId} = req.body
+    const {projectId} = req.body
+    const member = await ProjectMember.findOne({project : projectId, user : req._id})
 
     // const projectDetails = await getAllDetailsOfProject(projectId)
     // return res.status(200).json(new ApiResponse(200, projectDetails[0], "Project Details Fetched"))
-    return res.status(200).json(new ApiResponse(200, req.project.toObject(), "Project Details Fetched"))
+    return res.status(200).json(new ApiResponse(200, {...req.project.toObject(), memberId : member._id}, "Project Details Fetched"))
 })
 
+const getProjectMember = asyncHandler(async (req, res)=>{
+    const {memberId} = req.body
+    const member = await ProjectMember.aggregate([
+      {
+        $match : {_id : new mongoose.Types.ObjectId(memberId)}
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "user",
+          foreignField: "_id",
+          as: "userDetails"
+        }
+      },
+      { $unwind: "$userDetails" },
+      {
+        $project: {
+          _id : 1,
+          userId : "$userDetails._id",
+          username: "$userDetails.username",
+          email: "$userDetails.email",
+          avatar: "$userDetails.avatar",
+          fullName : "$userDetails.fullName",
+          role: 1,
+        }
+      }
+    ])
+    console.log('member => ', member[0])
+    return res.status(200).json(new ApiResponse(200, member[0], "Member Details Fetched"))
+})
+const getAllProjectMember = asyncHandler(async (req, res)=>{  
+    console.log(req.body.projectId)
+    const members = await ProjectMember.aggregate([
+       {
+          $match : {project  : new mongoose.Types.ObjectId(req.body.projectId)}
+       },
+       {
+        $project : {
+          _id: 1,
+        }
+       }
+    ])
+    console.log('members',members)
+    return res.status(200).json(new ApiResponse(200, {members}, "Members Fetched"))
+
+})
 const deleteProject = asyncHandler(async (req, res)=>{
     const projectId = req.body.projectId
     const boardDetails = await getBoardsWithTaskDetails(projectId)
@@ -427,6 +474,91 @@ const allProjects = asyncHandler(async (req, res)=>{
     return res.status(200).json(new ApiResponse(200, {projects}, "All Projects"))
 })
 
+const usersByPrefix = asyncHandler(async (req, res) => {
+  let { page, limit, query, projectId } = req.body;
+
+  page = parseInt(page ?? 1);
+  page = page <= 0 ? 1 : page;
+
+  limit = parseInt(limit ?? 10);
+  limit = limit <= 0 ? 10 : limit;
+
+  const skip = (page - 1) * limit;
+
+  const users = await User.aggregate([
+    {
+      $match: {
+        isEmailVerified: true,
+        $or: [
+          { username: { $regex: `^${query}`, $options: "i" } },
+          { email: { $regex: `^${query}`, $options: "i" } },
+          { fullName: { $regex: `^${query}`, $options: "i" } }
+        ]
+      }
+    },
+    {
+      $lookup: {
+        from: "projectmembers", // collection name in MongoDB (lowercase plural)
+        let: { userId: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$user", "$$userId"] },
+                  { $eq: ["$project", new mongoose.Types.ObjectId(projectId)] }
+                ]
+              }
+            }
+          }
+        ],
+        as: "membership"
+      }
+    },
+    {
+      $match: {
+        membership: { $size: 0 } // exclude if user is already a member
+      }
+    },
+    {
+      $facet: {
+        users: [
+          {
+            $project: {
+              username: 1,
+              fullName: 1,
+              email: 1,
+              avatar: 1
+            }
+          },
+          { $skip: skip },
+          { $limit: limit }
+        ],
+        count: [
+          { $count: "total" }
+        ]
+      }
+    },
+    {
+      $project: {
+        users: 1,
+        totalCount: {
+          $cond: [
+            { $gt: [{ $size: "$count" }, 0] },
+            { $arrayElemAt: ["$count.total", 0] },
+            0
+          ]
+        }
+      }
+    }
+  ]);
+  console.log(users[0])
+  res
+    .status(200)
+    .json(new ApiResponse(200, users[0], "Users fetched successfully"));
+});
+
+
 export {
     createNewProject,
     updateProjectDetails,
@@ -438,4 +570,7 @@ export {
     projectDetails,
     deleteProject,
     allProjects,
+    getProjectMember,
+    getAllProjectMember,
+    usersByPrefix,
 }

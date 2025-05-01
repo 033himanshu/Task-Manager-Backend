@@ -18,6 +18,8 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
     try {
         const data = jwt.verify(token, process.env.JWT_ACCESS_TOKEN_SECRET)
         req._id = data._id
+        console.log(req.url)
+        console.log("JWT Verified")
         next()
     } catch (error) {
         throw new ApiError(401, error ?? "User Not Authorized")
@@ -47,7 +49,10 @@ export const verifyProjectMember = asyncHandler(async (req, res, next)=>{
     if(projectMember && projectMember.status != ProjectMemberStatusEnum.PENDING) {
         req.project = existingProject
         req.role = projectMember.role
+        req.memberId = projectMember._id
         next()
+        console.log(req.url)
+        console.log("Project Member Verified")
     }
     else
         throw new ApiError(403, "Not Authorized to Perform Action")

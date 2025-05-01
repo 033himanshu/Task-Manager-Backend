@@ -10,7 +10,8 @@ import {
     // deleteAccount,
     deleteAvatar,
     me,
-    getUserByPrefix,
+    // usersByPrefix,
+    userRoles,
 } from './user.controller.js'
 
 import {userUpdateProfileValidator, userUpdateCurrentPasswordValidator, userForgotPasswordValidator} from "../../validators/index.js"
@@ -38,6 +39,5 @@ router.post('/delete-avatar', deleteAvatar)
 router.post('/update-password', userUpdateCurrentPasswordValidator(), validate, updatePassword)
 // router.post('/delete-account', deleteAccount) 
 // intensionaly removed delete account functionality, because didn't implementated a case that what happened to user's created projects
-router.get('/get-user-with-prefix', getUserByPrefix)
-
+router.get('/user-roles', userRoles)
 export default router

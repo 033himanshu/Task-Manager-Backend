@@ -11,16 +11,16 @@ import mongoose from "mongoose"
 import { deleteAllSubTask } from '../../utils/deletionHandling.js'
 
 const createTask = asyncHandler(async (req, res)=>{
-    const {title, description, assignedTo, projectId} = req.body
-    if(assignedTo){
-        const member = await ProjectMember.findOne({project: projectId, user:  assignedTo})
-        if(!member)
-            throw new ApiError(404, "Member Not found in Project Member")
-    }
-    const task = await Task.create({title, description, assignedTo, assignedBy: req._id})
+    const {title, description, projectId} = req.body
+    // if(assignedTo){
+    //     const member = await ProjectMember.findOne({project: projectId, user:  assignedTo})
+    //     if(!member)
+    //         throw new ApiError(404, "Member Not found in Project Member")
+    // }
+    const task = await Task.create({title, description})
     await req.board.tasks.push(task._id)
     await req.board.save()
-    return res.status(201).json(new ApiResponse(201, {task}, "Task Created"))
+    return res.status(201).json(new ApiResponse(201, req.board.toObject(), "Task Created"))
 })
 
 const updateTask = asyncHandler(async (req, res)=>{
@@ -28,9 +28,10 @@ const updateTask = asyncHandler(async (req, res)=>{
     req.task.title = title
     req.task.description = description
     await req.task.save()
-    return res.status(200).json(new ApiResponse(200, {}, "Task Updated"))
+    return res.status(200).json(new ApiResponse(200, req.task.toObject(), "Task Updated"))
 })
 const taskDetails = asyncHandler(async (req, res)=>{
+    console.log(req.task.toObject())
     return res.status(200).json(new ApiResponse(200, req.task.toObject(), "Task Details"))
 })
 
@@ -79,15 +80,21 @@ const deleteAttachment = asyncHandler(async (req, res)=>{
 
 
 const updateAssignedMember = asyncHandler(async (req, res)=>{
-    const {projectId, assignedTo} = req.body
-    if(assignedTo){
-        const member = await ProjectMember.findOne({project: projectId, user:  assignedTo})
+    const {projectId, memberId} = req.body
+    console.log({projectId, memberId})
+    let member = undefined
+    if(memberId){
+        member = await ProjectMember.findOne({project: projectId, _id:  memberId})
         if(!member)
             throw new ApiError(404, "Member Not found in Project Member")
     }
-    req.task.assignedTo = assignedTo
+    
+
+    req.task.assignedTo = memberId
+    req.task.assignedBy = req.memberId
     await req.task.save()
-    return res.status(200).json(new ApiResponse(200, {}, "Assinged Member updated"))
+    console.log('updateAssignedMember', req.task.toObject())
+    return res.status(200).json(new ApiResponse(200, req.task.toObject(), "Assinged Member updated"))
 })
 
 const changeBoardAndPosition = asyncHandler(async (req, res) => {
@@ -123,7 +130,7 @@ const changeBoardAndPosition = asyncHandler(async (req, res) => {
         await newBoard.save();
     }
 
-    return res.status(200).json(new ApiResponse(200, req.board.ObjectId(), "Board and Position Changed"));
+    return res.status(200).json(new ApiResponse(200, [req.board.toObject(), newBoard.toObject()], "Board and Position Changed"));
 });
 
 const deleteTask = asyncHandler(async (req, res)=>{
@@ -148,7 +155,7 @@ const createSubTask = asyncHandler (async (req, res)=>{
     const subTask = await SubTask.create({title, createdBy})
     req.task.subTasks.push(subTask._id)
     await req.task.save()
-    return res.status(201).json(new ApiResponse(201, subTask.toObject(), "SubTask Created"))
+    return res.status(201).json(new ApiResponse(201, req.task.toObject(), "SubTask Created"))
 })
 const updateSubTask = asyncHandler(async (req, res)=>{
     const {title, isCompleted} = req.body

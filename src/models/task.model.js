@@ -11,11 +11,11 @@ const taskSchema = new mongoose.Schema({
     },
     assignedTo : {
         type : Schema.Types.ObjectId,
-        ref : 'User',
+        ref : 'ProjectMember',
     },
     assignedBy: {
         type: Schema.Types.ObjectId,
-        ref: "User",
+        ref: "ProjectMember",
         required: true,
     },
     attachments: {

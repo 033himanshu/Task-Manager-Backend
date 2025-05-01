@@ -6,7 +6,7 @@ import { destroyOnCloudinary, replaceOnCloudinary, uploadOnCloudinary, destroyFo
 import { ApiResponse } from "../../utils/api-response.js"
 
 import {CloudinaryFolderEnum} from '../../utils/constants.js'
-
+import {AvailableUserRoles} from '../../utils/constants.js'
 
 //controllers
 const verifyEmail = asyncHandler(async (req, res) =>{
@@ -59,7 +59,7 @@ const resendEmailVerification = asyncHandler(async (req, res)=>{
     user.emailVerificationToken = undefined
     user.emailVerificationExpiry = undefined
     user.markModified("email")
-    user.save()
+    await user.save()
     return res.status(200).json(new ApiResponse(200, {user: {
         _id : user._id,
         avatar : user.avatar,
@@ -209,39 +209,10 @@ const deleteAvatar = asyncHandler (async(req, res)=>{
     return res.status(200).json(new ApiResponse(200, {avatar : user.avatar}, "Profile Picture Deleted"))
 })
 
-const getUserByPrefix = asyncHandler(async (req, res) => {
-    let { page, limit, query } = req.body
-    page = parseInt(page ?? 1)
-    page = page<=0 ? 1 : page
-    limit = parseInt(limit ?? 10)
-    limit = limit<=0 ? 10 : limit
-    const skip = (page - 1) * limit
 
-    const users = await User.aggregate([
-        {
-            $match: {
-              isEmailVerified: true,
-              $or: [
-                { username: { $regex: `^${query}`, $options: "i" } },
-                { email:    { $regex: `^${query}`, $options: "i" } },
-                { fullName: { $regex: `^${query}`, $options: "i" } }
-              ]
-            }
-        },
-        {
-            $project: {
-                username: 1,
-                fullName: 1,
-                email: 1,
-                avatar: 1
-            }
-        },
-        { $skip: skip },
-        { $limit: limit }
-    ]);
-
-    res.status(200).json(new ApiResponse(200, users, "Users fetched successfully"));
-});
+const userRoles = asyncHandler(async (req, res)=>{
+    return res.status(200).json(new ApiResponse(200, AvailableUserRoles, 'User Roles'))
+})
 
 
 export {
@@ -255,7 +226,7 @@ export {
     deleteAccount,
     deleteAvatar,
     me,
-    getUserByPrefix,
+    userRoles,
 }
 
 

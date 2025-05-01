@@ -12,6 +12,9 @@ import {
     allProjects,
     acceptRequest,
     rejectRequest,
+    getProjectMember,
+    getAllProjectMember,
+    usersByPrefix,
 } from './project.controller.js'
 
 import {
@@ -29,6 +32,9 @@ router.use(isUserVerified)
 router.post('/create-new-project', createProjectValidator(), validate, createNewProject)
 router.post('/all-projects', allProjects)
 router.use(verifyProjectMember)
+router.post('/users-with-prefix', usersByPrefix)
+router.post('/get-project-member', getProjectMember)
+router.post('/get-all-project-member', getAllProjectMember)
 router.post('/project-details', projectDetails)
 router.use(verifyProjectAdmin)
 router.patch('/update-project-details', createProjectValidator(), validate, updateProjectDetails)

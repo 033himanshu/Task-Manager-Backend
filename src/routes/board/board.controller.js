@@ -113,7 +113,7 @@ const updateBoardPosition = asyncHandler(async (req, res) => {
     if (newIndex < 0 || newIndex >= boardArray.length)
         throw new ApiError(400, "Invalid Index");
 
-    const currentIndex = boardArray.findIndex(Id => castedBoardId.equals(bId));
+    const currentIndex = boardArray.findIndex(bId => castedBoardId.equals(bId));
 
     if (currentIndex === newIndex)
         return res.status(200).json(new ApiResponse(200, {}, "Board already at desired position"));
@@ -142,8 +142,7 @@ const deleteBoard = asyncHandler(async (req, res)=>{
 
 
 const boardDetails = asyncHandler(async (req, res)=>{
-    const tasks = await getBoardsAllTasksDetails(req.body.boardId)
-    return res.status(200).json(new ApiResponse(200, {...req.board.toObject(), tasks }, "Board Details Fetched Successfully"))
+    return res.status(200).json(new ApiResponse(200, req.board.toObject(), "Board Details Fetched Successfully"))
 })
 
 export {
